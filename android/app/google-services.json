@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "546582948467",
+    "project_id": "shopspehere",
+    "storage_bucket": "shopspehere.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546582948467:android:e691976005c70efc3c1806",
+        "android_client_info": {
+          "package_name": "com.example.shopsphere"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "546582948467-enlscqlfbnfo8ndffeol9il9hnoivv23.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.shopsphere",
+            "certificate_hash": "0a58e7558b8d1d973590173d2bcbb4f65a2b7e16"
+          }
+        },
+        {
+          "client_id": "546582948467-db11ce82c815gockcuhhrj2rgosksibd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCckZdAG05MwM8a9u8KBFL6TjzpccjYPhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "546582948467-db11ce82c815gockcuhhrj2rgosksibd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
