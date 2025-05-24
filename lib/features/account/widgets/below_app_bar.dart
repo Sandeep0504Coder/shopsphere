@@ -17,7 +17,7 @@ class BelowAppBar extends StatelessWidget {
       padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
       child: Row(
         children: [
-          RichText(
+          user != null ? RichText(
             text: TextSpan(
               text: 'Hello, ',
               style: const TextStyle(
@@ -26,7 +26,7 @@ class BelowAppBar extends StatelessWidget {
               ),
               children: [
                 TextSpan(
-                  text: user?.name,
+                  text: user.name,
                   style: const TextStyle(
                     fontSize: 22,
                     color: Colors.black,
@@ -35,7 +35,28 @@ class BelowAppBar extends StatelessWidget {
                 ),
               ],
             ),
+          ): 
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Account", 
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                )
+              ),
+              Text(
+                "Log in to get exclusive offers",
+                style: const TextStyle(
+                    fontSize: 22,
+                    color: Colors.black,
+                  ),
+              )
+            ],
           ),
+          
         ],
       ),
     );

@@ -18,7 +18,7 @@ class SearchServices {
     List<Product> productList = [];
     try {
       http.Response res = await http.get(
-        Uri.parse('$uri/api/v1/product/all?$searchQuery'),
+        Uri.parse('$uri/api/v1/product/all?$searchQuery&page=1'),
         headers: {
           'Content-Type': 'application/json',
         },

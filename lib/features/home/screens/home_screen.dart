@@ -2,8 +2,10 @@ import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/home/widgets/address_box.dart';
 import 'package:shopsphere/features/home/widgets/carousel_image.dart';
 import 'package:shopsphere/features/home/widgets/deal_of_day.dart';
+import 'package:shopsphere/features/home/widgets/hero_section.dart';
 import 'package:shopsphere/features/home/widgets/top_categories.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
+import 'package:shopsphere/features/home/services/home_services.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -96,12 +98,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SingleChildScrollView(
         child: Column(
-          children: const [
+          children: [
             AddressBox(),
             SizedBox(height: 10),
             TopCategories(),
             SizedBox(height: 10),
-            CarouselImage(),
+            HeroSection(),
             // DealOfDay(),
           ],
         ),

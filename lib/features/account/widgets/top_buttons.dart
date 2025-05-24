@@ -12,7 +12,7 @@ class TopButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>().user;
 
-    return Column(
+    return   user != null ? Column(
       children: [
         Row(
           children: [
@@ -30,8 +30,8 @@ class TopButtons extends StatelessWidget {
         Row(
           children: [
             AccountButton(
-              text: user != null ? 'Log Out' : 'Log In',
-              onTap: () => user != null ? AccountServices().logOut(context) : Navigator.of(context).pushNamed(AuthScreen.routeName),
+              text: 'Log Out',
+              onTap: () => AccountServices().logOut(context),
             ),
             AccountButton(
               text: 'Your Wish List',
@@ -40,6 +40,17 @@ class TopButtons extends StatelessWidget {
           ],
         ),
       ],
+    ) : Column(
+      children: [
+        Row(
+          children: [
+            AccountButton(
+              text: 'Log In',
+              onTap: () => Navigator.of(context).pushNamed(AuthScreen.routeName),
+            ),
+          ],
+        ),
+      ]
     );
   }
 }

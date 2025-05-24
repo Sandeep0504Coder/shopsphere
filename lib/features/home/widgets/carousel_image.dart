@@ -3,6 +3,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 
 class CarouselImage extends StatelessWidget {
+  
   const CarouselImage({Key? key}) : super(key: key);
 
   @override
