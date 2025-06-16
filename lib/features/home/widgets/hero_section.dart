@@ -4,6 +4,7 @@ import 'package:shopsphere/features/home/services/home_services.dart';
 import 'package:shopsphere/features/home/widgets/promotional_video_player.dart';
 import 'package:shopsphere/models/home_page_content.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:shopsphere/models/product.dart';
 
 class HeroSection extends StatefulWidget {
   const HeroSection({super.key});
@@ -31,7 +32,7 @@ class _HeroSectionState extends State<HeroSection> {
     return homePageContent == null ? Loader() : Column(
       children: [
         // Banners Slider - You can use a PageView or CarouselSlider package
-        Container(
+        SizedBox(
           height: 200,
           child: CarouselSlider(
             items: homePageContent!.banners.map((b) {
@@ -40,6 +41,7 @@ class _HeroSectionState extends State<HeroSection> {
             options: CarouselOptions(
               viewportFraction: 1,
               height: 200,
+              autoPlay: true
             ),
           ),
         ),
@@ -60,17 +62,32 @@ class _HeroSectionState extends State<HeroSection> {
                   itemCount: section.products!.length,
                   itemBuilder: (context, index) {
                     final product = section.products![index];
-                    return Card(
-                      child: Column(
-                        children: [
-                          Image.network(product.photos[0].url, height: 100, width: 100, fit: BoxFit.cover),
-                          Text(product.name),
-                          Text("\$${product.price}"),
-                          ElevatedButton(
-                            onPressed: () {},
-                            child: const Text("Add to Cart"),
-                          )
-                        ],
+                    return SizedBox(
+                      width: 160,
+                      child: Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.network(product.photos[0].url, height: 100, width: 100, fit: BoxFit.cover),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child:Text("\$${product.price}"),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                child: const Text("Add to Cart"),
+                              )
+                            )
+                          ],
+                        ),
                       ),
                     );
                   },

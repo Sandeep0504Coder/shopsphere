@@ -7,7 +7,7 @@ import 'package:shopsphere/features/home/widgets/top_categories.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
 import 'package:shopsphere/features/home/services/home_services.dart';
 import 'package:flutter/material.dart';
-
+import 'package:shopsphere/models/search_query.dart';
 class HomeScreen extends StatefulWidget {
   static const String routeName = '/home';
   const HomeScreen({Key? key}) : super(key: key);
@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   void navigateToSearchScreen(String query) {
-    Navigator.pushNamed(context, SearchScreen.routeName, arguments: query);
+    Navigator.pushNamed(context, SearchScreen.routeName, arguments: SearchQuery( query, "" ));
   }
 
   @override
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 1,
                           ),
                         ),
-                        hintText: 'Search Amazon.in',
+                        hintText: 'Search products...',
                         hintStyle: const TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 17,

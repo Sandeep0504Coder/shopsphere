@@ -1,146 +1,391 @@
-import 'package:shopsphere/common/widgets/loader.dart';
-import 'package:shopsphere/constants/global_variables.dart';
-import 'package:shopsphere/features/home/widgets/address_box.dart';
-// import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
-import 'package:shopsphere/features/search/services/search_services.dart';
-import 'package:shopsphere/features/search/widgets/searched_product.dart';
-import 'package:shopsphere/models/product.dart';
 import 'package:flutter/material.dart';
-
+// import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shopsphere/features/search/services/search_services.dart';
+import 'package:shopsphere/features/home/services/home_services.dart';
+import 'package:shopsphere/models/product.dart';
 class SearchScreen extends StatefulWidget {
   static const String routeName = '/search-screen';
-  final String searchQuery;
-  const SearchScreen({
-    Key? key,
-    required this.searchQuery,
-  }) : super(key: key);
+  final String? initialSearch;
+  final String? initialCategory;
+  const SearchScreen({this.initialSearch, this.initialCategory, super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  List<Product>? products;
   final SearchServices searchServices = SearchServices();
+  final HomeServices homeServices = HomeServices();
+  Map<String, String> sortOptions = {
+    "asc": 'Price: Low to High',
+    "dsc": 'Price: High to Low',
+  };
+
+  Map<String, String> priceOptions = {
+    '0-10000': "Under \$10,000",
+    '10000-20000': '\$10,000 - \$20,000',
+    '20000-30000': '\$20,000 - \$30,000',
+    '30000-50000': '\$30,000 - \$50,000',
+    '50000-': 'Above \$50,000',
+  };
+  String search = "";
+  String selectedSort = "";
+  String selectedPrice = "";
+  String selectedCategory = "";
+  String tempSelectedCategory = ""; // used for modal selection
+  int page = 1;
+
+  bool isLoading = false;
+  bool isCategoryLoading = false;
+  List<String> categories = [];
+  List<dynamic> products = [];
+  int totalPage = 1;
+  bool isLoadingMore = false;
+  bool isLastPage = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    fetchSearchedProduct();
+    search = widget.initialSearch ?? "";
+    selectedCategory = widget.initialCategory ?? "";
+    fetchCategories();
+    fetchProducts();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 300) {
+        if (!isLoadingMore && !isLastPage) {
+          setState(() => page++);
+          fetchProducts(isLoadMore: true);
+        }
+      }
+    });
+  }
+  
+
+  void fetchCategories() async {
+    setState(() => isCategoryLoading = true);
+    categories = await homeServices.getProductCategories(context: context);
+    setState(() => isCategoryLoading = false);
   }
 
-  fetchSearchedProduct() async {
-    products = await searchServices.fetchSearchedProduct(
-        context: context, searchQuery: widget.searchQuery);
-    setState(() {});
+  // void fetchProducts() async {
+  //   setState(() => isLoading = true);
+  //   SearchProductResponse response = await searchServices.fetchSearchedProduct(
+  //     context: context,
+  //     search: search,
+  //     sort: selectedSort,
+  //     minPrice: selectedPrice.split("-").length == 2 ? selectedPrice.split("-")[0] : "0",
+  //     maxPrice: selectedPrice.split("-").length == 2 ? selectedPrice.split("-")[1] : "",
+  //     category: selectedCategory,
+  //     page: page,
+  //   );
+
+  //   products = response.products;
+  //   totalPage = response.totalPage;
+  //   // setState(() {});
+  //   // try {
+  //   //   final response = await fetchProductsFromAPI(
+  //   //     search: search,
+  //   //     sort: sort,
+  //   //     maxPrice: maxPrice,
+  //   //     category: category,
+  //   //     page: page,
+  //   //   );
+  //   //   products = response.products;
+  //   //   totalPage = response.totalPage;
+  //   // } catch (e) {
+  //   //   // Fluttertoast.showToast(msg: "Failed to fetch products");
+  //   // }
+  //   setState(() => isLoading = false);
+  // }
+
+  Future<void> fetchProducts({bool isLoadMore = false}) async {
+    if (isLoadingMore) return;
+
+    setState(() => isLoadingMore = true);
+
+    final response = await searchServices.fetchSearchedProduct(
+      context: context,
+      search: search,
+      sort: selectedSort,
+      minPrice: selectedPrice.split("-").length == 2 ? selectedPrice.split("-")[0] : "0",
+      maxPrice: selectedPrice.split("-").length == 2 ? selectedPrice.split("-")[1] : "",
+      category: selectedCategory,
+      page: page,
+    );
+
+    if (response != null) {
+      final newProducts = response.products;
+      final totalPage = response.totalPage;
+
+      setState(() {
+        if (!isLoadMore) {
+          products = newProducts;
+        } else {
+          products.addAll(newProducts);
+        }
+
+        isLastPage = page >= totalPage;
+        isLoadingMore = false;
+      });
+    }
   }
 
-  void navigateToSearchScreen(String query) {
-    Navigator.pushNamed(context, SearchScreen.routeName, arguments: query);
+
+  void addToCart(product) {
+    if (product.stock < 1) {
+      // Fluttertoast.showToast(msg: "Out of Stock.");
+      return;
+    }
+    // Your add to cart logic
+    // Fluttertoast.showToast(msg: "Added to cart");
+  }
+
+  Widget _buildProductCard(Product product) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: Image.network(product.photos[0].url, fit: BoxFit.cover),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text("\$${product.price}", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ElevatedButton(
+              onPressed: () => addToCart(product),
+              child: Text("Add to Cart"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showMappedFilterBottomSheet({
+    required BuildContext context,
+    required String title,
+    required Map<String, String> options,
+    required String selectedKey,
+    required void Function(String) onApply,
+  }) {
+    String tempSelectedKey = selectedKey;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Spacer(),
+                      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: options.entries.map((entry) {
+                      final isSelected = tempSelectedKey == entry.key;
+                      return ChoiceChip(
+                        label: Text(entry.value),
+                        selected: isSelected,
+                        onSelected: (_) => setState(() => tempSelectedKey = entry.key),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() => tempSelectedKey = "");
+                          },
+                          child: const Text("Clear"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            onApply(tempSelectedKey);
+                          },
+                          child: const Text("Apply"),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AppBar(
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: GlobalVariables.appBarGradient,
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        // backgroundColor: Colors.white,
+        elevation: 1,
+        title: SizedBox(
+          height: 40,
+          child: TextField(
+            controller: TextEditingController(text: search),
+            onSubmitted: (val) {
+              setState(() => search = val);
+              fetchProducts();
+            },
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              hintText: "Search products...",
+              suffixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              filled: true,
+              fillColor: Colors.grey[100],
             ),
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Container(
-                  height: 42,
-                  margin: const EdgeInsets.only(left: 15),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(7),
-                    elevation: 1,
-                    child: TextFormField(
-                      onFieldSubmitted: navigateToSearchScreen,
-                      decoration: InputDecoration(
-                        prefixIcon: InkWell(
-                          onTap: () {},
-                          child: const Padding(
-                            padding: EdgeInsets.only(
-                              left: 6,
-                            ),
-                            child: Icon(
-                              Icons.search,
-                              color: Colors.black,
-                              size: 23,
-                            ),
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.only(top: 10),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(7),
-                          ),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(7),
-                          ),
-                          borderSide: BorderSide(
-                            color: Colors.black38,
-                            width: 1,
-                          ),
-                        ),
-                        hintText: 'Search by name...',
-                        hintStyle: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 17,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                color: Colors.transparent,
-                height: 42,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                child: const Icon(Icons.mic, color: Colors.black, size: 25),
-              ),
-            ],
           ),
         ),
       ),
-      body: products == null
-          ? const Loader()
-          : Column(
-              children: [
-                const AddressBox(),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: products!.length,
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          // Navigator.pushNamed(
-                          //   context,
-                          //   // ProductDetailScreen.routeName,
-                          //   arguments: products![index],
-                          // );
-                        },
-                        child: SearchedProduct(
-                          product: products![index],
-                        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Filter Chips (Brand, Price, RAM, etc.)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ChoiceChip(
+                    label: Text("Category"),
+                    selected: selectedCategory != "",
+                    onSelected: (_) {
+                      showMappedFilterBottomSheet(
+                        context: context,
+                        title: "Select Category",
+                        options: { for (var category in categories) category: category },
+                        selectedKey: selectedCategory,
+                        onApply: (value){
+                          setState((){
+                            selectedCategory = value;
+                            page = 1;
+                          });
+                          fetchProducts();
+                        }
                       );
                     },
                   ),
-                ),
-              ],
+                  SizedBox(width: 16),
+                  ChoiceChip(
+                    label: Text("Sort"),
+                    selected: selectedSort != "",
+                    onSelected: (_) {
+                      showMappedFilterBottomSheet(
+                        context: context,
+                        title: "Sort by",
+                        options: sortOptions,
+                        selectedKey: selectedSort,
+                        onApply: (value){
+                          setState((){
+                            selectedSort = value;
+                            page = 1;
+                          });
+                          fetchProducts();
+                        }
+                      );
+                    },
+                  ),
+                  SizedBox(width: 16),
+                  ChoiceChip(
+                    label: Text("Price"),
+                    selected: selectedPrice != '',
+                    onSelected: (_) {
+                      showMappedFilterBottomSheet(
+                        context: context,
+                        title: "Price Range",
+                        options: priceOptions,
+                        selectedKey: selectedPrice,
+                        onApply: (value){
+                          setState((){
+                            selectedPrice = value;
+                            page = 1;
+                          });
+                          fetchProducts();
+                        }
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
+          ),
+          // Product List or Grid
+          Expanded(
+            child: GridView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(8,8,8,48),
+              itemCount: products.length + (isLoadingMore ? 1 : 0),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.55,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+              ),
+              itemBuilder: (context, index) {
+                if (index < products.length) {
+                  final product = products[index];
+                  return _buildProductCard(product);
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+

@@ -4,31 +4,39 @@ import 'package:shopsphere/constants/error_handling.dart';
 import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/constants/utils.dart';
 import 'package:shopsphere/models/product.dart';
-import 'package:shopsphere/providers/user_provider.dart';
+import 'package:shopsphere/models/search_product_response.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
 class SearchServices {
-  Future<List<Product>> fetchSearchedProduct({
+  Future<SearchProductResponse> fetchSearchedProduct({
     required BuildContext context,
-    required String searchQuery,
+    required String search,
+    required String sort,
+    required String maxPrice,
+    required String minPrice,
+    required String category,
+    required int page
   }) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
     List<Product> productList = [];
+    int totalPage = 1;
+    String searchQuery = 'maxPrice=$maxPrice&minPrice=$minPrice&page=$page';
+    if(category.isNotEmpty) searchQuery += '&category=$category';
+    if(sort.isNotEmpty) searchQuery += '&sort=$sort';
+    if(search.isNotEmpty) searchQuery += '&search=$search';
+
     try {
       http.Response res = await http.get(
-        Uri.parse('$uri/api/v1/product/all?$searchQuery&page=1'),
+        Uri.parse('$uri/api/v1/product/all?$searchQuery'),
         headers: {
           'Content-Type': 'application/json',
         },
       );
-  // print(res.body);
+
       httpErrorHandle(
         response: res,
         context: context,
         onSuccess: () {
-          // print(jsonDecode(res.body).products);
           for (int i = 0; i < jsonDecode(res.body)['products'].length; i++) {
             productList.add(
               Product.fromJson(
@@ -38,12 +46,12 @@ class SearchServices {
               ),
             );
           }
-          print(productList);
+          totalPage = jsonDecode(res.body)['totalPage'] ?? 1;
         },
       );
     } catch (e) {
       showSnackBar(context, e.toString());
     }
-    return productList;
+    return SearchProductResponse(products: productList, totalPage: totalPage);
   }
 }

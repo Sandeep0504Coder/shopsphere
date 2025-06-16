@@ -3,6 +3,7 @@ import 'features/auth/screens/auth_screen.dart';
 import 'package:shopsphere/features/home/screens/home_screen.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
 import 'package:shopsphere/common/widgets/bottom_bar.dart';
+import 'package:shopsphere/models/search_query.dart';
 
 Route<dynamic> generateRoute(RouteSettings routeSettings) {
   switch (routeSettings.name) {
@@ -37,11 +38,12 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
     //     ),
     //   );
     case SearchScreen.routeName:
-      var searchQuery = routeSettings.arguments as String;
+      var searchQuery = routeSettings.arguments as SearchQuery;
       return MaterialPageRoute(
         settings: routeSettings,
         builder: (_) => SearchScreen(
-          searchQuery: searchQuery,
+          initialSearch: searchQuery.serach,
+          initialCategory: searchQuery.category
         ),
       );
     // case ProductDetailScreen.routeName:

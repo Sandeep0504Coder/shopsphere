@@ -1,8 +1,10 @@
 import 'package:shopsphere/common/widgets/loader.dart';
+import 'package:shopsphere/common/widgets/shimmer_loader.dart';
 import 'package:shopsphere/constants/global_variables.dart';
-// import 'package:shopsphere/features/home/screens/category_deals_screen.dart';
+import 'package:shopsphere/features/search/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shopsphere/features/home/services/home_services.dart';
+import 'package:shopsphere/models/search_query.dart';
 
 class TopCategories extends StatefulWidget {
   const TopCategories({Key? key}) : super(key: key);
@@ -13,8 +15,8 @@ class TopCategories extends StatefulWidget {
 
 class _TopCategoriesState extends State<TopCategories> {
   void navigateToCategoryPage(BuildContext context, String category) {
-    // Navigator.pushNamed(context, CategoryDealsScreen.routeName,
-    //     arguments: category);
+    Navigator.pushNamed(context, SearchScreen.routeName,
+        arguments: SearchQuery("", category));
   }
 
    List<String> categories = [];
@@ -34,7 +36,7 @@ class _TopCategoriesState extends State<TopCategories> {
 
   @override
   Widget build(BuildContext context) {
-    return categories.isEmpty ? const Loader() : SizedBox(
+    return categories.isEmpty ? ShimmerLoader( itemCount: 12 ) : SizedBox(
       height: 30,
       child: ListView.builder(
         itemCount: categories.length,
@@ -86,3 +88,4 @@ class _TopCategoriesState extends State<TopCategories> {
     );
   }
 }
+
