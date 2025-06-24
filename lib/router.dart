@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'features/auth/screens/auth_screen.dart';
 import 'package:shopsphere/features/home/screens/home_screen.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
+import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
 import 'package:shopsphere/common/widgets/bottom_bar.dart';
 import 'package:shopsphere/models/search_query.dart';
+import 'package:shopsphere/models/product.dart';
 
 Route<dynamic> generateRoute(RouteSettings routeSettings) {
   switch (routeSettings.name) {
@@ -46,14 +48,15 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
           initialCategory: searchQuery.category
         ),
       );
-    // case ProductDetailScreen.routeName:
-    //   var product = routeSettings.arguments as Product;
-    //   return MaterialPageRoute(
-    //     settings: routeSettings,
-    //     builder: (_) => ProductDetailScreen(
-    //       product: product,
-    //     ),
-    //   );
+    case ProductDetailsScreen.routeName:
+      var productDetailsParams = routeSettings.arguments as ProductDetailsParams;
+      return MaterialPageRoute(
+        settings: routeSettings,
+        builder: (_) => ProductDetailsScreen(
+          productId: productDetailsParams.productId,
+          variantId: productDetailsParams.variantId,
+        ),
+      );
     // case AddressScreen.routeName:
     //   var totalAmount = routeSettings.arguments as String;
     //   return MaterialPageRoute(

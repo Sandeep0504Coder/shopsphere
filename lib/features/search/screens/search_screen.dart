@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shopsphere/features/search/services/search_services.dart';
 import 'package:shopsphere/features/home/services/home_services.dart';
+import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
 import 'package:shopsphere/models/product.dart';
 class SearchScreen extends StatefulWidget {
   static const String routeName = '/search-screen';
@@ -141,6 +142,10 @@ class _SearchScreenState extends State<SearchScreen> {
     // Fluttertoast.showToast(msg: "Added to cart");
   }
 
+  void navigateToProductDetailsScreen(String productId) {
+    Navigator.pushNamed(context, ProductDetailsScreen.routeName, arguments: ProductDetailsParams(productId,""));
+  }
+
   Widget _buildProductCard(Product product) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -148,17 +153,32 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: Image.network(product.photos[0].url, fit: BoxFit.cover),
+          GestureDetector(
+            onTap: () {
+              navigateToProductDetailsScreen(product.id);
+            },
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Image.network(product.photos[0].url, fit: BoxFit.cover),
+            )
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+          GestureDetector(
+            onTap: () {
+              navigateToProductDetailsScreen(product.id);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+            )
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text("\$${product.price}", style: TextStyle(fontWeight: FontWeight.bold)),
+          GestureDetector(
+            onTap: () {
+              navigateToProductDetailsScreen(product.id);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text("\$${product.price}", style: TextStyle(fontWeight: FontWeight.bold)),
+            )
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),

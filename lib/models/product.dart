@@ -96,3 +96,10 @@ class Product {
   factory Product.fromJson(String source) =>
       Product.fromMap(json.decode(source));
 }
+
+class ProductDetailsParams {
+  final String productId;
+  final String variantId;
+
+  ProductDetailsParams(this.productId, this.variantId);
+}
