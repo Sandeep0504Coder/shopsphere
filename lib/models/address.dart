@@ -1,14 +1,14 @@
 class Address {
   final String id;
   final String name;
-  final String primaryPhone;
-  final String secondaryPhone;
+  final int primaryPhone;
+  final int? secondaryPhone;
   final String address;
   final String address2;
   final String city;
   final String state;
   final String country;
-  final String pinCode;
+  final int pinCode;
   final String user;
   final bool isDefault;
 

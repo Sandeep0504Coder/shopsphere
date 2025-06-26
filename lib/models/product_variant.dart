@@ -1,4 +1,5 @@
 import 'configuration.dart';
+import 'dart:convert';
 
 class ProductVariant {
   final List<Configuration> configuration;
@@ -32,4 +33,5 @@ class ProductVariant {
       if (id != null) '_id': id,
     };
   }
+  String toJson() => json.encode(toMap());
 }

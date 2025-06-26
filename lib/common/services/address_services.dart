@@ -15,7 +15,7 @@ class AddressServices {
 
     try {
       http.Response res = await http.get(Uri.parse('$uri/api/v1/user/address/my?id=$userId'));
-
+      
       httpErrorHandle(
         response: res,
         context: context,
@@ -26,7 +26,7 @@ class AddressServices {
             for (int i = 0; i < data['addresses'].length; i++) {
               addresses.add(
                 Address.fromJson(
-                  data['reviews'][i],
+                  data['addresses'][i],
                 ),
               );
             }
