@@ -13,7 +13,7 @@ class ProductDetailsScreen extends StatefulWidget {
   static const String routeName = '/product-details';
   final String productId;
   final String? variantId;
-  const ProductDetailsScreen({ Key? key, required this.productId, this.variantId }) : super(key: key);
+  const ProductDetailsScreen({Key? key, required this.productId, this.variantId}) : super(key: key);
 
   @override
   _ProductDetailsScreenState createState() => _ProductDetailsScreenState();
@@ -46,19 +46,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     addresses = await addressServices.fetchAddresses(userId: user!.id, context: context);
     selectedAddress = addresses.isEmpty
         ? null
-        : addresses.firstWhere(
-            (a) => a.isDefault,
-            orElse: () => addresses.first,
-          );
+        : addresses.firstWhere((a) => a.isDefault, orElse: () => addresses.first);
     if (widget.variantId != null) {
       final selectedVariant = product?.variants.firstWhere(
         (v) => v.id == widget.variantId,
         orElse: () => product!.variants.first,
       );
       if (selectedVariant != null) {
-        selectedConfig = {
-          for (var c in selectedVariant.configuration) c.key: c.value,
-        };
+        selectedConfig = {for (var c in selectedVariant.configuration) c.key: c.value};
       }
     }
 
@@ -122,7 +117,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     print("Adding to cart: ${variant.toJson()}");
-    // Add your add-to-cart logic here.
   }
 
   String getSelectedConfigName(ProductVariant variant) {
@@ -142,6 +136,65 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
     buffer.write(" )");
     return buffer.toString();
+  }
+
+  void _openVariantSelector() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView(
+            children: product!.variants.expand((variant) => variant.configuration).map((config) => config.key).toSet().map((key) {
+              final options = product!.variants
+                  .expand((variant) => variant.configuration)
+                  .where((c) => c.key == key)
+                  .map((c) => c.value)
+                  .toSet();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(key.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Wrap(
+                    spacing: 8,
+                    children: options.map((option) {
+                      final isSelected = selectedConfig[key] == option;
+                      return ChoiceChip(
+                        label: Text(option),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          _updateConfiguration(key, option);
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  )
+                ],
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openAddressSelector() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return ListView(
+          children: addresses.map((a) => ListTile(
+            title: Text(a.name),
+            subtitle: Text("${a.address}, ${a.city}, ${a.state}, ${a.pinCode}"),
+            onTap: () {
+              setState(() => selectedAddress = a);
+              Navigator.pop(context);
+            },
+          )).toList(),
+        );
+      },
+    );
   }
 
   Widget _buildSuggestedProducts() {
@@ -179,6 +232,57 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  Widget _buildVariantSummary() {
+  final configKeys = product!.variants
+      .expand((v) => v.configuration)
+      .map((c) => c.key)
+      .toSet()
+      .toList();
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text("Select Variant", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+      const SizedBox(height: 8),
+      ...configKeys.map((key) {
+        final options = product!.variants
+            .expand((v) => v.configuration)
+            .where((c) => c.key == key)
+            .map((c) => c.value)
+            .toSet()
+            .toList();
+
+        final selectedValue = selectedConfig[key] ?? options.first;
+        final otherOptionsCount = options.length - 1;
+
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: RichText(
+            text: TextSpan(
+              text: "$key: ",
+              style: const TextStyle(color: Colors.black),
+              children: [
+                TextSpan(
+                  text: selectedValue,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                )
+              ],
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("$otherOptionsCount more", style: const TextStyle(color: Colors.grey)),
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
+          onTap: () => _openVariantSelector(),
+        );
+      }),
+    ],
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     if (isLoading || product == null) {
@@ -189,6 +293,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(product!.name)),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          color: Colors.white,
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: quantity > 1 ? () => setState(() => quantity--) : null,
+                icon: const Icon(Icons.remove),
+              ),
+              Text(quantity.toString(), style: const TextStyle(fontSize: 18)),
+              IconButton(
+                onPressed: () => setState(() => quantity++),
+                icon: const Icon(Icons.add),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: _addToCart,
+                child: Text(isInCart ? "Update Cart" : "Add to Cart"),
+              )
+            ],
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -204,60 +332,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               }).toList(),
             ),
             const SizedBox(height: 10),
+            
+            _buildVariantSummary(),
+            const SizedBox(height: 8),
             Text(product!.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             if (selectedVariant != null) Text(getSelectedConfigName(selectedVariant)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text("₹${selectedVariant?.price ?? product!.price}", style: const TextStyle(fontSize: 18, color: Colors.green)),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                IconButton(onPressed: quantity > 1 ? () => setState(() => quantity--) : null, icon: const Icon(Icons.remove)),
-                Text(quantity.toString(), style: const TextStyle(fontSize: 18)),
-                IconButton(onPressed: () => setState(() => quantity++), icon: const Icon(Icons.add)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text("Configurations", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Wrap(
-              spacing: 8,
-              children: product!.variants.expand((variant) => variant.configuration).map((config) => config.key).toSet().map((key) {
-                final options = product!.variants
-                    .expand((variant) => variant.configuration)
-                    .where((c) => c.key == key)
-                    .map((c) => c.value)
-                    .toSet();
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(key.toUpperCase()),
-                    Wrap(
-                      spacing: 8,
-                      children: options.map((option) {
-                        final isSelected = selectedConfig[key] == option;
-                        return ChoiceChip(
-                          label: Text(option),
-                          selected: isSelected,
-                          onSelected: (_) => _updateConfiguration(key, option),
-                        );
-                      }).toList(),
-                    )
+            GestureDetector(
+              onTap: _openAddressSelector,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Deliver to:", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  if (selectedAddress != null) ...[
+                    Text("${selectedAddress!.name}, ${selectedAddress!.pinCode}"),
+                    Text("${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}"),
                   ],
-                );
-              }).toList(),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
-            if (selectedAddress != null) ...[
-              Text("Deliver to:", style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text("${selectedAddress!.name}, ${selectedAddress!.pinCode}"),
-              Text("${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}"),
-              const SizedBox(height: 12),
-            ],
-            ElevatedButton(
-              onPressed: _addToCart,
-              child: Text(isInCart ? "Update Cart" : "Add to Cart"),
-            ),
-            const SizedBox(height: 20),
             Text("Description", style: const TextStyle(fontWeight: FontWeight.bold)),
             Text(product!.description ?? ""),
             const Divider(height: 32),
@@ -274,36 +370,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                   trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () {/* delete logic */}),
                 )),
-                _buildSuggestedProducts(),
-            // const Divider(height: 32),
-            // if (product!.suggestedItems!.isNotEmpty) ...[
-            //   Text("Suggested Products", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            //   const SizedBox(height: 10),
-            //   SizedBox(
-            //     height: 200,
-            //     child: ListView.builder(
-            //       scrollDirection: Axis.horizontal,
-            //       itemCount: product!.suggestedItems!.length,
-            //       itemBuilder: (context, index) {
-            //         final suggestion = product!.suggestedItems![index].product;
-            //         return Container(
-            //           width: 120,
-            //           margin: const EdgeInsets.symmetric(horizontal: 8),
-            //           child: Column(
-            //             children: [
-            //               Expanded(
-            //                 child: Image.network(suggestion.photos.first.url, fit: BoxFit.cover),
-            //               ),
-            //               const SizedBox(height: 4),
-            //               Text(suggestion.name, overflow: TextOverflow.ellipsis),
-            //               Text("₹${suggestion.price}", style: const TextStyle(color: Colors.green)),
-            //             ],
-            //           ),
-            //         );
-            //       },
-            //     ),
-            //   )
-            // ]
+            _buildSuggestedProducts(),
           ],
         ),
       ),
