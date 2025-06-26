@@ -12,7 +12,7 @@ class ProductDetailsScreen extends StatefulWidget {
   static const String routeName = '/product-details';
   final String productId;
   final String? variantId;
-  const ProductDetailsScreen({ Key? key, required this.productId, this.variantId }) : super(key: key);
+  const ProductDetailsScreen({Key? key, required this.productId, this.variantId}) : super(key: key);
 
   @override
   _ProductDetailsScreenState createState() => _ProductDetailsScreenState();
@@ -28,9 +28,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Product? product;
   List<Review> reviews = [];
   List<Address> addresses = [];
+  Address? selectedAddress;
 
   Map<String, String> selectedConfig = {};
-  Address? selectedAddress;
 
   @override
   void initState() {
@@ -39,20 +39,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _fetchProductDetails() async {
-    final user = Provider.of<UserProvider>(context,listen: false).user;
+    final user = Provider.of<UserProvider>(context, listen: false).user;
     product = await productServices.fetchProductDetails(id: widget.productId, context: context);
     reviews = await productServices.fetchReviews(productId: widget.productId, context: context);
     addresses = await addressServices.fetchAddresses(userId: user!.id, context: context);
-    selectedAddress = addresses.isEmpty
-    ? null
-    : addresses.firstWhere(
-        (a) => a.isDefault,
-        orElse: () => addresses.first,
-      );
-    isLoading = false;
-
-    setState(() {
+    product?.variants[0].configuration.forEach((config){
+       _updateConfiguration(config.key, config.value);
     });
+    selectedAddress = addresses.isEmpty
+        ? null
+        : addresses.firstWhere(
+            (a) => a.isDefault,
+            orElse: () => addresses.first,
+          );
+
+    isLoading = false;
+    setState(() {});
   }
 
   void _updateConfiguration(String key, String value) {
@@ -62,7 +64,42 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _addToCart() {
-    // Handle add to cart logic
+    // Add to cart logic
+  }
+
+  Widget _buildSuggestedProducts() {
+    if (product?.suggestedItems == null) return const SizedBox();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 32),
+        const Text("Suggested Products", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: product!.suggestedItems!.length,
+            itemBuilder: (context, index) {
+              final item = product!.suggestedItems?[index].product;
+              return Container(
+                width: 150,
+                margin: const EdgeInsets.only(right: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.network(item!.photos.first.url, height: 100, fit: BoxFit.cover),
+                    const SizedBox(height: 4),
+                    Text(item.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text("₹${item.price}", style: const TextStyle(color: Colors.green)),
+                  ],
+                ),
+              );
+            },
+          ),
+        )
+      ],
+    );
   }
 
   @override
@@ -90,9 +127,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             const SizedBox(height: 10),
             Text(product!.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text("\$${product!.price}", style: const TextStyle(fontSize: 18, color: Colors.green)),
+            Text("₹${product!.price}", style: const TextStyle(fontSize: 18, color: Colors.green)),
             const SizedBox(height: 8),
-            // Quantity Selector
             Row(
               children: [
                 IconButton(onPressed: quantity > 1 ? () => setState(() => quantity--) : null, icon: const Icon(Icons.remove)),
@@ -101,23 +137,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            // Configuration selector placeholder
-            Text("Configurations", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Wrap(
-              spacing: 8,
-              children: ["4GB", "6GB", "8GB"].map((option) {
-                final isSelected = selectedConfig["RAM"] == option;
-                return ChoiceChip(
-                  label: Text(option),
-                  selected: isSelected,
-                  onSelected: (_) => _updateConfiguration("RAM", option),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
-            // Address
+            if (product!.variants.isNotEmpty) ...[
+              const Text("Select Variant", style: TextStyle(fontWeight: FontWeight.bold)),
+              ..._buildVariantSelectors(),
+              const SizedBox(height: 12),
+            ],
             if (selectedAddress != null) ...[
-              Text("Deliver to:", style: const TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Deliver to:", style: TextStyle(fontWeight: FontWeight.bold)),
               Text("${selectedAddress!.name}, ${selectedAddress!.pinCode}"),
               Text("${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}"),
               const SizedBox(height: 12),
@@ -127,10 +153,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               child: Text(isInCart ? "Update Cart" : "Add to Cart"),
             ),
             const SizedBox(height: 20),
-            Text("Description", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(product!.description??""),
+            const Text("Description", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(product!.description ?? ""),
             const Divider(height: 32),
-            Text("Reviews", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Reviews", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ...reviews.map((r) => ListTile(
               leading: CircleAvatar(backgroundImage: NetworkImage(r.user.photo)),
               title: Text(r.user.name),
@@ -143,10 +169,35 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
               trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () {/* delete logic */}),
             )),
+            _buildSuggestedProducts(),
           ],
         ),
       ),
     );
   }
-}
 
+  List<Widget> _buildVariantSelectors() {
+    final allKeys = product!.variants.expand((v) => v.configuration).map((c) => c.key).toSet();
+    return allKeys.map((key) {
+      final values = product!.variants.expand((v) => v.configuration).where((c) => c.key == key).map((c) => c.value).toSet().toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Text(key.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+          Wrap(
+            spacing: 8,
+            children: values.map((value) {
+              final isSelected = selectedConfig[key] == value;
+              return ChoiceChip(
+                label: Text(value),
+                selected: isSelected,
+                onSelected: (_) => _updateConfiguration(key, value),
+              );
+            }).toList(),
+          ),
+        ],
+      );
+    }).toList();
+  }
+}
