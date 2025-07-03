@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:shopsphere/common/widgets/stars.dart';
+import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/product_details/services/product_services.dart';
 import 'package:shopsphere/common/services/address_services.dart';
 import 'package:shopsphere/models/address.dart';
+import 'package:shopsphere/models/cart_item.dart';
 import 'package:shopsphere/models/product.dart';
 import 'package:shopsphere/models/product_variant.dart';
 import 'package:shopsphere/models/review.dart';
+import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   static const String routeName = '/product-details';
@@ -20,6 +25,8 @@ class ProductDetailsScreen extends StatefulWidget {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  double reviewRating = 0;
+  final TextEditingController reviewController = TextEditingController();
   final ProductServices productServices = ProductServices();
   final AddressServices addressServices = AddressServices();
   int quantity = 1;
@@ -41,14 +48,27 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   void _fetchProductDetails() async {
     final user = Provider.of<UserProvider>(context, listen: false).user;
+    final selectedShippingAddressId = Provider.of<CartProvider>(context, listen: false).selectedShippingAddressId;
     product = await productServices.fetchProductDetails(id: widget.productId, context: context);
     reviews = await productServices.fetchReviews(productId: widget.productId, context: context);
-    addresses = await addressServices.fetchAddresses(userId: user!.id, context: context);
-    selectedAddress = addresses.isEmpty
-        ? null
-        : addresses.firstWhere((a) => a.isDefault, orElse: () => addresses.first);
+
+    if(user != null){
+      addresses = await addressServices.fetchAddresses(userId: user.id, context: context);
+    }
+    if( addresses.isNotEmpty ){
+      if( selectedShippingAddressId.isNotEmpty ){
+        selectedAddress = addresses.firstWhere((a) => a.id == selectedShippingAddressId, orElse: () => addresses.first);
+      } else {
+        selectedAddress = addresses.firstWhere((a) => a.isDefault, orElse: () => addresses.first);
+      }
+    } else {
+      selectedAddress = null;
+    }
+
     if (widget.variantId != null) {
-      final selectedVariant = product?.variants.firstWhere(
+      ProductVariant? selectedVariant = product!.variants.isEmpty
+        ? null
+        :product?.variants.firstWhere(
         (v) => v.id == widget.variantId,
         orElse: () => product!.variants.first,
       );
@@ -68,6 +88,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   ProductVariant? _getFilteredVariant() {
+    if(product!.variants.isEmpty){
+      return null;
+    }
     final variants = product?.variants ?? [];
     return variants.firstWhere(
       (variant) => variant.configuration.every(
@@ -107,16 +130,97 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return bestVariant;
   }
 
-  void _addToCart() {
-    final variant = _getFilteredVariant();
-    if (variant == null) {
+  void _addToCart( CartItem cartItem, BuildContext context, CartProvider cartProvider) {
+    if( cartItem.stock < 1 ) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("No matching variant found.")),
+        const SnackBar(content: Text("Out of Stock.")),
       );
       return;
     }
 
-    print("Adding to cart: ${variant.toJson()}");
+    if( cartItem.stock < cartItem.quantity ){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Only ${cartItem.stock} items available.")),
+      );
+      return;
+    }
+    
+    cartProvider.addToCart(cartItem, updateIfExists: true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${cartItem.name} added to cart')),
+    );
+
+    Navigator.pushNamed(context, '/cart');
+  }
+
+  void _submitReview() async {
+    Navigator.of(context).pop(); // Close modal
+
+    if (reviewRating == 0 || reviewController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please provide a rating and comment.")),
+      );
+      return;
+    }
+
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      await productServices.addEditReview(
+        context: context,
+        productId: product!.id,
+        userId: user!.id,
+        comment: reviewController.text.trim(),
+        rating: reviewRating.toInt(),
+      );
+
+      setState(() {
+        reviewRating = 0;
+        reviewController.clear();
+      });
+
+      _fetchProductDetails(); // refresh reviews
+    } catch (error) {
+      print(error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error submitting review.")),
+      );
+    }
+  }
+
+  void _deleteReview(String reviewId) async {
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      await productServices.deleteReview(
+        context: context,
+        reviewId: reviewId,
+        userId: user!.id,
+      );
+
+      setState(() {
+      });
+
+      _fetchProductDetails(); // refresh reviews
+    } catch (error) {
+      print(error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error deleting review.")),
+      );
+    }
+  }
+
+  _handleSelectedAddressChange(Address? address, BuildContext context) {
+    if (address == null) return;
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    cartProvider.updateShippingAddressId(address.id);
+    setState(() {
+      selectedAddress = address;
+    });
+    Navigator.pop(context);
+  }
+
+
+  void navigateToProductDetailsScreen(String productId) {
+    Navigator.pushNamed(context, ProductDetailsScreen.routeName, arguments: ProductDetailsParams(productId,""));
   }
 
   String getSelectedConfigName(ProductVariant variant) {
@@ -142,149 +246,337 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ListView(
-            children: product!.variants.expand((variant) => variant.configuration).map((config) => config.key).toSet().map((key) {
-              final options = product!.variants
-                  .expand((variant) => variant.configuration)
-                  .where((c) => c.key == key)
-                  .map((c) => c.value)
-                  .toSet();
+        return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with title and close icon
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 12.0,
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: 12.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Select Variant',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(
+                color: GlobalVariables.greyBackgroundColor,
+              ),
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(key.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Wrap(
-                    spacing: 8,
-                    children: options.map((option) {
-                      final isSelected = selectedConfig[key] == option;
-                      return ChoiceChip(
-                        label: Text(option),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          _updateConfiguration(key, option);
-                          Navigator.pop(context);
-                        },
-                      );
-                    }).toList(),
-                  )
-                ],
-              );
-            }).toList(),
-          ),
+              // Variant options
+              Flexible(
+                child: ListView(
+                  padding: const EdgeInsets.only(
+                    top: 0.0,
+                    left: 16.0,
+                    right: 16.0,
+                    bottom: 12.0,
+                  ),
+                  children: product!.variants
+                      .expand((variant) => variant.configuration)
+                      .map((config) => config.key)
+                      .toSet()
+                      .map((key) {
+                    final options = product!.variants
+                        .expand((variant) => variant.configuration)
+                        .where((c) => c.key == key)
+                        .map((c) => c.value)
+                        .toSet();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        Text(
+                          "${key.toUpperCase()}: ${selectedConfig[key] ?? ''}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: options.map((option) {
+                            final isSelected = selectedConfig[key] == option;
+                            return ChoiceChip(
+                              label: Text(option),
+                              selected: isSelected,
+                              onSelected: (_) {
+                                _updateConfiguration(key, option);
+                                Navigator.pop(context);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
         );
       },
     );
   }
 
+  void _showReviewModal() {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 16,
+          left: 16,
+          right: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Write a Review", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reviewController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: "Write your review...",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(width: 8),
+                RatingBar.builder(
+                  initialRating: reviewRating,
+                  minRating: 1,
+                  direction: Axis.horizontal,
+                  allowHalfRating: false,
+                  itemCount: 5,
+                  itemSize: 30,
+                  itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  itemBuilder: (context, _) => const Icon(Icons.star, color: Colors.amber),
+                  onRatingUpdate: (rating) {
+                    setState(() {
+                      reviewRating = rating;
+                    });
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _submitReview,
+              child: const Text("Submit"),
+            ),
+            const SizedBox(height: 60),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
   void _openAddressSelector() {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return ListView(
-          children: addresses.map((a) => ListTile(
-            title: Text(a.name),
-            subtitle: Text("${a.address}, ${a.city}, ${a.state}, ${a.pinCode}"),
-            onTap: () {
-              setState(() => selectedAddress = a);
-              Navigator.pop(context);
-            },
-          )).toList(),
+        return Column(
+          children: [
+            Padding(
+                padding: const EdgeInsets.only(
+                  top: 12.0,
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: 12.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Select Delivery Address',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(
+                color: GlobalVariables.greyBackgroundColor,
+              ),
+            Flexible(
+              child: ListView(
+                children: addresses.map((a) => ListTile(
+                  selected:  selectedAddress == a ? true : false,
+                  selectedColor: GlobalVariables.appBarGradient.colors.first,
+                  title: Text('${a.name}, ${a.pinCode}', style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text("${a.address}, ${a.city}, ${a.state}, ${a.pinCode}"),
+                  onTap: () {
+                    _handleSelectedAddressChange(a, context);
+                  },
+                )).toList(),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
   Widget _buildSuggestedProducts() {
-    if (product?.suggestedItems == null) return const SizedBox();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Divider(height: 32),
-        const Text("Suggested Products", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: product!.suggestedItems!.length,
-            itemBuilder: (context, index) {
-              final item = product!.suggestedItems?[index].product;
-              return Container(
-                width: 150,
-                margin: const EdgeInsets.only(right: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Image.network(item!.photos.first.url, height: 100, fit: BoxFit.cover),
-                    const SizedBox(height: 4),
-                    Text(item.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    Text("₹${item.price}", style: const TextStyle(color: Colors.green)),
-                  ],
-                ),
-              );
-            },
+    if (product?.suggestedItems == null || product!.suggestedItems!.isEmpty) return const SizedBox();
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: GlobalVariables.greyBackgroundColor, // Light grey border
+            width: 3,
           ),
-        )
-      ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Suggested Products", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 200,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: product!.suggestedItems!.length,
+              itemBuilder: (context, index) {
+                final item = product!.suggestedItems?[index].product;
+                return GestureDetector(
+                  onTap: () {
+                    navigateToProductDetailsScreen(item.id);
+                  },
+                  child: Container(
+                    width: 150,
+                    margin: const EdgeInsets.only(right: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.network(item!.photos.first.url, height: 100, fit: BoxFit.cover),
+                        const SizedBox(height: 4),
+                        Text(item.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text("\$${item.price}", style: const TextStyle(color: Colors.green)),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          )
+        ],
+      ),
     );
   }
 
   Widget _buildVariantSummary() {
-  final configKeys = product!.variants
+    if(product!.variants.isEmpty){
+      return SizedBox();
+    }
+
+    final configKeys = product!.variants
       .expand((v) => v.configuration)
       .map((c) => c.key)
       .toSet()
       .toList();
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text("Select Variant", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-      const SizedBox(height: 8),
-      ...configKeys.map((key) {
-        final options = product!.variants
-            .expand((v) => v.configuration)
-            .where((c) => c.key == key)
-            .map((c) => c.value)
-            .toSet()
-            .toList();
-
-        final selectedValue = selectedConfig[key] ?? options.first;
-        final otherOptionsCount = options.length - 1;
-
-        return ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: RichText(
-            text: TextSpan(
-              text: "$key: ",
-              style: const TextStyle(color: Colors.black),
-              children: [
-                TextSpan(
-                  text: selectedValue,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                )
-              ],
-            ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: GlobalVariables.greyBackgroundColor, // Light grey border
+            width: 3,
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("$otherOptionsCount more", style: const TextStyle(color: Colors.grey)),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-            ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16,8,16,8),
+            child: const Text("Select Variant", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
-          onTap: () => _openVariantSelector(),
-        );
-      }),
-    ],
-  );
-}
+          Divider(color: GlobalVariables.greyBackgroundColor,),
+          ...configKeys.map((key) {
+            final options = product!.variants
+                .expand((v) => v.configuration)
+                .where((c) => c.key == key)
+                .map((c) => c.value)
+                .toSet()
+                .toList();
+      
+            final selectedValue = selectedConfig[key] ?? options.first;
+            final otherOptionsCount = options.length - 1;
+      
+            return ListTile(
+              contentPadding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+              title: RichText(
+                text: TextSpan(
+                  text: "$key: ",
+                  style: const TextStyle(color: Colors.black),
+                  children: [
+                    TextSpan(
+                      text: selectedValue,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    )
+                  ],
+                ),
+              ),
+              trailing: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("$otherOptionsCount more", style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 119, 119, 119))),
+                  const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black),
+                ],
+              ),
+              onTap: () => _openVariantSelector(),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserProvider>(context).user;
+    final cartProvider = Provider.of<CartProvider>(context);
     if (isLoading || product == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -292,41 +584,77 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final selectedVariant = _getFilteredVariant();
 
     return Scaffold(
-      appBar: AppBar(title: Text(product!.name)),
+      appBar: AppBar(
+        surfaceTintColor: GlobalVariables.selectedNavBarColor,
+        title: Text(product!.name)
+      ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.all(12),
+          margin: EdgeInsets.all(0),
           color: Colors.white,
           child: Row(
             children: [
-              IconButton(
-                onPressed: quantity > 1 ? () => setState(() => quantity--) : null,
-                icon: const Icon(Icons.remove),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: quantity > 1 ? () => setState(() => quantity--) : null,
+                      icon: const Icon(Icons.remove),
+                    ),
+                    Text(quantity.toString(), style: const TextStyle(fontSize: 18)),
+                    IconButton(
+                      onPressed: () => setState(() => quantity++),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
               ),
-              Text(quantity.toString(), style: const TextStyle(fontSize: 18)),
-              IconButton(
-                onPressed: () => setState(() => quantity++),
-                icon: const Icon(Icons.add),
-              ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: _addToCart,
-                child: Text(isInCart ? "Update Cart" : "Add to Cart"),
+              Expanded(
+                child: GestureDetector(
+                  onTap: (){
+                    _addToCart(
+                      CartItem(
+                        productId: product!.id,
+                        photo: product!.photos.first.url,
+                        name: product!.name,
+                        price: selectedVariant?.price ?? product!.price,
+                        quantity: quantity,
+                        stock: selectedVariant?.stock ?? product!.stock,
+                        variant: selectedVariant, // Handle variants if needed
+                      ),
+                      context,
+                      cartProvider
+                    );
+                  },
+                  child: Container(
+                    color: Colors.amber,
+                    child: Center( heightFactor: 2, child: Text(
+                      isInCart ? "Update Cart" : "Add to Cart",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold
+                      )
+                    ))
+                  ),
+                ),
               )
             ],
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CarouselSlider(
-              options: CarouselOptions(height: 250, autoPlay: true),
+              options: CarouselOptions(
+                viewportFraction: 1,
+                height: 250,
+                autoPlay: true,
+                clipBehavior: Clip.none
+              ),
               items: product!.photos.map((photo) {
                 return ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
                   child: Image.network(photo.url, fit: BoxFit.cover, width: double.infinity),
                 );
               }).toList(),
@@ -334,42 +662,169 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             const SizedBox(height: 10),
             
             _buildVariantSummary(),
-            const SizedBox(height: 8),
-            Text(product!.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            if (selectedVariant != null) Text(getSelectedConfigName(selectedVariant)),
-            const SizedBox(height: 4),
-            Text("₹${selectedVariant?.price ?? product!.price}", style: const TextStyle(fontSize: 18, color: Colors.green)),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: _openAddressSelector,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16,16,16,8),
+              child: Text(product!.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+            if (selectedVariant != null) Padding(
+              padding: const EdgeInsets.fromLTRB(16,0,16,8),
+              child: Text(getSelectedConfigName(selectedVariant)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16,0,16,8),
+              child: Row(
+                spacing : 4,
                 children: [
-                  Text("Deliver to:", style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (selectedAddress != null) ...[
-                    Text("${selectedAddress!.name}, ${selectedAddress!.pinCode}"),
-                    Text("${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}"),
-                  ],
+                  Stars(rating: product!.ratings ?? 0),
+                  Text('${product!.ratings ?? 0}',style:TextStyle(color: Colors.green)),
+                  Container(
+                    margin: EdgeInsets.fromLTRB(4, 0, 4, 0),
+                    height: 4,
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: GlobalVariables.secondaryTextColor,
+                      borderRadius: BorderRadius.all(Radius.circular(4))
+                    )
+                  ),
+                  Text(
+                    '${product!.numOfReviews ?? 0} ratings',
+                    style: TextStyle(
+                      color: GlobalVariables.secondaryTextColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600
+                    )
+                  )
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Text("Description", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(product!.description ?? ""),
-            const Divider(height: 32),
-            Text("Reviews", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ...reviews.map((r) => ListTile(
-                  leading: CircleAvatar(backgroundImage: NetworkImage(r.user.photo)),
-                  title: Text(r.user.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: List.generate(r.rating, (_) => const Icon(Icons.star, size: 16, color: Colors.amber))),
-                      Text(r.comment),
-                    ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16,0,16,16),
+              child: Text("\$${selectedVariant?.price ?? product!.price}", style: const TextStyle(fontSize: 18, color: Colors.green)),
+            ),
+            if(selectedAddress != null)
+            Container(
+              width: double.maxFinite,
+              padding: EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: GlobalVariables.greyBackgroundColor, // Light grey border
+                    width: 3,
                   ),
-                  trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () {/* delete logic */}),
-                )),
+                  bottom: BorderSide(
+                    color: GlobalVariables.greyBackgroundColor, // Light grey border
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                          // if (selectedAddress != null) ...[
+                            Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Deliver to: ',
+                                  style: TextStyle(fontWeight: FontWeight.normal),
+                                ),
+                                TextSpan(
+                                  text: '${selectedAddress!.name}, ${selectedAddress!.pinCode}',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text("${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}"),
+                        // ],
+                      ],
+                    ),
+                  ),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: GlobalVariables.greyBackgroundColor, width: 1), // Border color and width
+                    ),
+                    onPressed: _openAddressSelector,
+                    child: Text(
+                      "Change",
+                      style: TextStyle(
+                        color: GlobalVariables.secondaryTextColor,
+                        fontWeight: FontWeight.w600
+                      )
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Description", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(product!.description ?? ""),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(16),
+              width: double.maxFinite,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: GlobalVariables.greyBackgroundColor, // Light grey border
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: Text("Reviews", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: GlobalVariables.greyBackgroundColor, width: 1), // Border color and width
+                    ),
+                    onPressed: _showReviewModal,
+                    child: const Text("Rate Product",
+                      style: TextStyle(
+                          color: GlobalVariables.secondaryTextColor,
+                          fontWeight: FontWeight.w600
+                      )
+                    ),
+                  )
+                ],
+              )
+            ),
+            if(reviews.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+              child: Text("No reviews yet"),
+            ),
+            ...reviews.map((r) => ListTile(
+              leading: CircleAvatar(backgroundImage: NetworkImage(r.user.photo)),
+              title: Text(r.user.name),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stars(rating: r.rating.toDouble()),
+                  Text(r.comment),
+                ],
+              ),
+              trailing: user!.id == r.user.id ? IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  _deleteReview(r.id);
+                }
+              ) : null,
+            )),
+            SizedBox(
+              height: 16,
+            ),
             _buildSuggestedProducts(),
           ],
         ),

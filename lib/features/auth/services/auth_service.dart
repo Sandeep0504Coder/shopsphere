@@ -19,7 +19,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   // sign in user
-  void signInUser({
+  Future signInUser({
     required BuildContext context,
     required String gender,
     required String dob,

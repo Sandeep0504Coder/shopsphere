@@ -25,8 +25,8 @@ class _AuthScreenState extends State<AuthScreen> {
     _genderController.dispose();
   }
 
-  void signInUser(){
-    authService.signInUser(
+  void signInUser() async{
+    await authService.signInUser(
       context: context,
       gender: _genderController.text,
       dob: _dobController.text,
@@ -45,7 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ),
-      backgroundColor: GlobalVariables.greyBackgroundCOlor,
+      backgroundColor: GlobalVariables.greyBackgroundColor,
       body: SafeArea(child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(

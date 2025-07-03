@@ -70,6 +70,51 @@ class ProductServices {
     }
     return productReviews;
   }
-  // Future<Response> addEditReview(...) async { ... }
-  // Future<Response> deleteReview(String reviewId) async { ... }
+  Future addEditReview( {required String productId, required String userId, required String comment, required int rating, required BuildContext context } ) async {
+    try {
+      http.Response res = await http.post(
+        Uri.parse("$uri/api/v1/product/review/new/$productId?id=$userId"), // Replace with your API endpoint
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "rating": rating,
+          "comment": comment,
+        }),
+      );
+
+      httpErrorHandle(
+        response: res,
+        context: context,
+        onSuccess: () {
+          final data = jsonDecode(res.body);
+
+          if (data['success']) {
+            showSnackBar(context, data['message']);
+          }
+        },
+      );
+    } catch (e) {
+      showSnackBar(context, e.toString());
+    }
+  }
+  Future deleteReview({required String reviewId, required String userId, required BuildContext context}) async {
+    try {
+      http.Response res = await http.delete(
+        Uri.parse("$uri/api/v1/product/review/$reviewId?id=$userId"), // Replace with your API endpoint
+      );
+
+      httpErrorHandle(
+        response: res,
+        context: context,
+        onSuccess: () {
+          final data = jsonDecode(res.body);
+
+          if (data['success']) {
+            showSnackBar(context, data['message']);
+          }
+        },
+      );
+    } catch (e) {
+      showSnackBar(context, e.toString());
+    }
+  }
 }

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shopsphere/constants/global_variables.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shopsphere/features/search/services/search_services.dart';
 import 'package:shopsphere/features/home/services/home_services.dart';
+import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
+import 'package:shopsphere/models/cart_item.dart';
 import 'package:shopsphere/models/product.dart';
 class SearchScreen extends StatefulWidget {
   static const String routeName = '/search-screen';
@@ -133,13 +137,19 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
 
-  void addToCart(product) {
-    if (product.stock < 1) {
-      // Fluttertoast.showToast(msg: "Out of Stock.");
+  void _addToCart(CartItem cartItem, BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    if( cartItem.stock < 1 ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Out of Stock.")),
+      );
       return;
     }
-    // Your add to cart logic
-    // Fluttertoast.showToast(msg: "Added to cart");
+    
+      cartProvider.addToCart(cartItem, updateIfExists: false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${cartItem.name} added to cart')),
+      );
   }
 
   void navigateToProductDetailsScreen(String productId) {
@@ -147,48 +157,49 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildProductCard(Product product) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      elevation: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          GestureDetector(
-            onTap: () {
-              navigateToProductDetailsScreen(product.id);
-            },
-            child: AspectRatio(
+    return GestureDetector(
+      onTap: () {
+        navigateToProductDetailsScreen(product.id);
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 2,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AspectRatio(
               aspectRatio: 1,
               child: Image.network(product.photos[0].url, fit: BoxFit.cover),
-            )
-          ),
-          GestureDetector(
-            onTap: () {
-              navigateToProductDetailsScreen(product.id);
-            },
-            child: Padding(
+            ),
+            Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-            )
-          ),
-          GestureDetector(
-            onTap: () {
-              navigateToProductDetailsScreen(product.id);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text("\$${product.price}", style: TextStyle(fontWeight: FontWeight.bold)),
-            )
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: ElevatedButton(
-              onPressed: () => addToCart(product),
-              child: Text("Add to Cart"),
             ),
-          ),
-        ],
-      ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text("\$${product.variants.isNotEmpty ? product.variants[0].price : product.price}", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: ElevatedButton(
+                onPressed: () => _addToCart(
+                  CartItem(
+                    productId: product.id,
+                    photo: product.photos[0].url,
+                    name: product.name,
+                    price: product.variants.isNotEmpty ? product.variants[0].price : product.price,
+                    quantity: 1,
+                    stock: product.variants.isNotEmpty ? product.variants[0].stock : product.stock,
+                    variant: product.variants.isNotEmpty ? product.variants[0] : null, // Handle variants if needed
+                  ),
+                  context
+                ),
+                child: Text("Add to Cart"),
+              ),
+            ),
+          ],
+        ),
+      )
     );
   }
 
@@ -281,6 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
+        surfaceTintColor: GlobalVariables.selectedNavBarColor,
         // backgroundColor: Colors.white,
         elevation: 1,
         title: SizedBox(

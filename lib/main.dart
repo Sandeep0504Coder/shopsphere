@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/providers/user_provider.dart';
+import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/features/auth/screens/auth_screen.dart';
 import 'package:shopsphere/router.dart';
 import './screens/home.dart';
@@ -18,6 +19,7 @@ void main()async {
     ChangeNotifierProvider(
       create: (context) => UserProvider(),
     ),
+    ChangeNotifierProvider(create: (_) => CartProvider()),
   ], child: const MyApp()));
 }
 

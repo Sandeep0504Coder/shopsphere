@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'features/auth/screens/auth_screen.dart';
 import 'package:shopsphere/features/home/screens/home_screen.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
+import 'package:shopsphere/features/cart/screens/cart_screen.dart';
 import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
 import 'package:shopsphere/common/widgets/bottom_bar.dart';
 import 'package:shopsphere/models/search_query.dart';
@@ -25,11 +26,11 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
         settings: routeSettings,
         builder: (_) => const BottomBar(),
       );
-    // case AddProductScreen.routeName:
-    //   return MaterialPageRoute(
-    //     settings: routeSettings,
-    //     builder: (_) => const AddProductScreen(),
-    //   );
+    case CartScreen.routeName:
+      return MaterialPageRoute(
+        settings: routeSettings,
+        builder: (_) => const CartScreen(),
+      );
 
     // case CategoryDealsScreen.routeName:
     //   var category = routeSettings.arguments as String;
