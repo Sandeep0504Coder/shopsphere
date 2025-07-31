@@ -3,10 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shopsphere/models/cart_item.dart';
 import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/models/product_variant.dart';
-
 class CartItemTile extends StatelessWidget {
   final CartItem item;
-
   const CartItemTile({super.key, required this.item});
 
   String getSelectedConfigName(ProductVariant variant) {
@@ -75,33 +73,94 @@ class CartItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
+    final product = item;
+    final variant = item.variant;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      child: ListTile(
-        leading: Image.network(item.photo, width: 50, height: 50),
-        title: Text(item.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('₹${item.price}'),
-            Text('Stock: ${item.stock}'),
-            if (item.variant != null) Text('Variant: ${getSelectedConfigName(item.variant!)}'),
-          ],
-        ),
-        trailing: Column(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _incrementItem(item, cartProvider, context),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            offset: Offset(0, 2),
+            blurRadius: 6,
+          )
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              product.photo,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
             ),
-            Text(item.quantity.toString()),
-            IconButton(
-              icon: const Icon(Icons.remove),
-              onPressed: () => _decrementItem(item, cartProvider, context),
+          ),
+          const SizedBox(width: 12),
+
+          // Product Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                if (variant != null && variant.configuration.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(getSelectedConfigName(item.variant!),
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      "\$${variant?.price ?? product.price}",
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                )
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // Quantity Controls
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                onPressed: () {
+                  _incrementItem(item, cartProvider, context);
+                },
+              ),
+              Text(
+                "${item.quantity}",
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: () {
+                  _decrementItem(item, cartProvider, context);
+                },
+              ),
+            ],
+          )
+        ],
       ),
     );
   }

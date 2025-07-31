@@ -2,6 +2,7 @@ import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/account/screens/account_screen.dart';
 import 'package:shopsphere/features/cart/screens/cart_screen.dart';
 import 'package:shopsphere/features/home/screens/home_screen.dart';
+import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +34,7 @@ class _BottomBarState extends State<BottomBar> {
 
   @override
   Widget build(BuildContext context) {
-    // final userCartLen = context.watch<UserProvider>().user.cart.length;
+    final userCartLen = Provider.of<CartProvider>(context).cartItems.length;
 
     return Scaffold(
       body: pages[_page],
@@ -99,15 +100,15 @@ class _BottomBarState extends State<BottomBar> {
                   ),
                 ),
               ),
-              child: Text("0"), 
-              // Badge(
-              //   // elevation: 0,
-              //   // badgeContent: Text("0"),
-              //   // badgeColor: Colors.white,
-              //   child: const Icon(
-              //     Icons.shopping_cart_outlined,
-              //   ),
-              // ),
+              child:
+              Badge(
+                // elevation: 0,
+                label: Text(userCartLen.toString()),
+                // badgeColor: Colors.white,
+                child: const Icon(
+                  Icons.shopping_cart_outlined,
+                ),
+              ),
             ),
             label: '',
           ),

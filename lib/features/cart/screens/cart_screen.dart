@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopsphere/providers/cart_provider.dart';
+import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/cart/widgets/cart_item.dart';
 
 class CartScreen extends StatelessWidget {
@@ -12,53 +13,139 @@ class CartScreen extends StatelessWidget {
     final cart = Provider.of<CartProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Your Cart")),
+      appBar: AppBar(
+        title: const Text("Cart"),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: cart.cartItems.isEmpty
           ? const Center(child: Text("No items added"))
           : Column(
               children: [
                 Expanded(
                   child: ListView.builder(
+                    padding: const EdgeInsets.all(12),
                     itemCount: cart.cartItems.length,
                     itemBuilder: (_, index) =>
                         CartItemTile(item: cart.cartItems[index]),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                  decoration: const BoxDecoration(
                     color: Colors.white,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text("Subtotal: ₹${cart.subtotal}"),
-                      Text("Shipping: ₹${cart.shippingCharges}"),
-                      Text("Tax: ₹${cart.tax}"),
-                      Text("Discount: ₹${cart.discount}", style: const TextStyle(color: Colors.red)),
-                      const Divider(),
-                      Text("Total: ₹${cart.total}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      TextField(
-                        decoration: const InputDecoration(hintText: "Coupon Code"),
-                        // onChanged: cart.validateCoupon,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        offset: Offset(0, -1),
+                        blurRadius: 8,
                       ),
-                      // if (cart.couponApplied)
-                      //   Text("✅ Discount Applied", style: const TextStyle(color: Colors.green))
-                      // else if (cart.invalidCouponEntered)
-                      //   const Text("❌ Invalid Coupon", style: TextStyle(color: Colors.red)),
-                      const SizedBox(height: 10),
-                      if (cart.cartItems.isNotEmpty)
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, "/shipping");
-                          },
-                          child: const Text("Checkout"),
-                        ),
                     ],
                   ),
-                )
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Have a coupon code ? enter here",
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.grey.shade300, width: 1),
+                          borderRadius: BorderRadius.circular(12),
+                          // borderStyle: BorderStyle.solid,
+                          color: Colors.grey.shade50,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.local_offer_outlined,
+                                size: 18, color: GlobalVariables.selectedNavBarColor),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                "Enter Your Offer Code",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 16),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Subtotal :"),
+                          Text("\$${cart.subtotal.toStringAsFixed(2)}")
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Shipping Charges :"),
+                          Text('\$${cart.shippingCharges}')
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Tax :"),
+                          Text('\$${cart.tax}')
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Discount :"),
+                          Text('-\$${cart.discount}')
+                        ],
+                      ),
+                      const Divider(height: 20, thickness: 1),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Total :",
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(
+                            "\$${cart.total.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, "/shipping");
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: GlobalVariables.selectedNavBarColor,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Checkout",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white
+                              ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
     );
