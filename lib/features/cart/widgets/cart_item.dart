@@ -143,9 +143,9 @@ class CartItemTile extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.add_circle_outline),
+                icon: const Icon(Icons.remove_circle_outline),
                 onPressed: () {
-                  _incrementItem(item, cartProvider, context);
+                  _decrementItem(item, cartProvider, context);
                 },
               ),
               Text(
@@ -153,9 +153,9 @@ class CartItemTile extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
+                icon: const Icon(Icons.add_circle_outline),
                 onPressed: () {
-                  _decrementItem(item, cartProvider, context);
+                  _incrementItem(item, cartProvider, context);
                 },
               ),
             ],

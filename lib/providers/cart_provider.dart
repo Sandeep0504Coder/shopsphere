@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopsphere/models/system_settings.dart';
 import '../models/cart_item.dart';
 import '../models/shipping_info.dart';
 import '../models/product_variant.dart';
@@ -12,6 +13,8 @@ class CartProvider with ChangeNotifier {
   double _shippingCharges = 0;
   double _discount = 0;
   double _total = 0;
+  double _taxRate = 5; // Default tax rate
+  SystemSettings? _deliveryFee; // Default delivery percentage
 
   List<CartItem> get cartItems => _cartItems;
   ShippingInfo? get shippingInfo => _shippingInfo;
@@ -21,6 +24,8 @@ class CartProvider with ChangeNotifier {
   double get shippingCharges => _shippingCharges;
   double get discount => _discount;
   double get total => _total;
+  double get taxRate => _taxRate;
+  SystemSettings? get deliveryFee => _deliveryFee;
 
   void addToCart(CartItem item, {bool updateIfExists = true}) {
     final existingIndex = _cartItems.indexWhere((e) =>
@@ -48,10 +53,21 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _calculatePrices({double deliveryPercent = 5, double taxRate = 5}) {
+  void _calculatePrices() {
+    double shippingCharges = 0;
     _subtotal = _cartItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
-    _shippingCharges = _subtotal * deliveryPercent / 100;
-    _tax = _subtotal * taxRate / 100;
+
+    if( _deliveryFee?.settingValue == "true" && _subtotal >= _deliveryFee?.entityDetails.subtotalMinRange
+        && ( _deliveryFee?.entityDetails.subtotalMaxRange == null || _subtotal <= _deliveryFee?.entityDetails.subtotalMaxRange )
+    ){
+      double shippingChargeByPercent = _deliveryFee?.entityDetails.percentage * _subtotal / 100;
+      shippingCharges = _deliveryFee?.entityDetails.setDeliveryFeeTo == "Greater"
+          ? shippingChargeByPercent >= _deliveryFee?.entityDetails.amount ? shippingChargeByPercent : _deliveryFee?.entityDetails.amount
+          : shippingChargeByPercent < _deliveryFee?.entityDetails.amount ? shippingChargeByPercent : _deliveryFee?.entityDetails.amount;
+    }
+    
+    _shippingCharges = shippingCharges.roundToDouble();
+    _tax = (_subtotal * _taxRate / 100).roundToDouble();
     _total = _subtotal + _shippingCharges + _tax - _discount;
   }
 
@@ -80,6 +96,18 @@ class CartProvider with ChangeNotifier {
     _shippingCharges = 0;
     _discount = 0;
     _total = 0;
+    notifyListeners();
+  }
+
+  void setTaxRate(double rate) {
+    _taxRate = rate;
+    _calculatePrices();
+    notifyListeners();
+  }
+
+  void setDeliveryFee(SystemSettings deliveryFee) {
+    _deliveryFee = deliveryFee;
+    _calculatePrices();
     notifyListeners();
   }
 }

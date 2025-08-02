@@ -1,12 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopsphere/models/system_settings.dart';
 import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/cart/widgets/cart_item.dart';
+import 'package:shopsphere/features/cart/services/cart_services.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   static const String routeName = "/cart";
   const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  bool isLoading = true;
+  SystemSettings? deliveryFeeData;
+  SystemSettings? taxFeeData;
+  final CartServices cartServices = CartServices();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getFeeData();
+  }
+
+  Future<void> getFeeData() async {
+    deliveryFeeData = await cartServices.getSystemSettingDetailByUniqueName(
+      settingUniqueName: 'deliveryFee',
+      context: context,
+    );
+    taxFeeData = await cartServices.getSystemSettingDetailByUniqueName(
+      settingUniqueName: 'taxRate',
+      context: context,
+    );
+
+    if( deliveryFeeData != null ) {
+      Provider.of<CartProvider>(context, listen: false).setDeliveryFee(deliveryFeeData!);
+    }
+
+    if( taxFeeData != null ) {
+      Provider.of<CartProvider>(context, listen: false).setTaxRate(
+        double.parse(taxFeeData!.settingValue),
+      );
+    }
+    isLoading = false;
+    setState(() {});
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
