@@ -147,10 +147,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     
     cartProvider.addToCart(cartItem, updateIfExists: true);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${cartItem.name} added to cart')),
+      SnackBar(content: Row(
+        children: [
+          Expanded(child: Text('${cartItem.name} added to cart')),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/actual-home', arguments: 2);
+            },
+            child: Text("Go to Cart", style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.cyan)),
+          )
+        ],
+      )),
     );
-
-    Navigator.pushNamed(context, '/cart');
   }
 
   void _submitReview() async {

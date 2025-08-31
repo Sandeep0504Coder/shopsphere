@@ -15,7 +15,7 @@ void httpErrorHandle({
       onSuccess();
       break;
     case 400:
-      showSnackBar(context, jsonDecode(response.body)['msg']);
+      showSnackBar(context, jsonDecode(response.body)['message']);
       print(response.body);
       break;
     case 500:

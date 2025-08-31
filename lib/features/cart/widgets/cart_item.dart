@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shopsphere/models/cart_item.dart';
 import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/models/product_variant.dart';
+import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
+import 'package:shopsphere/models/product.dart';
 class CartItemTile extends StatelessWidget {
   final CartItem item;
   const CartItemTile({super.key, required this.item});
@@ -94,13 +96,18 @@ class CartItemTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              product.photo,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, ProductDetailsScreen.routeName, arguments: ProductDetailsParams(product.productId, variant?.id ?? ""));
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                product.photo,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -110,56 +117,81 @@ class CartItemTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  product.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, ProductDetailsScreen.routeName, arguments: ProductDetailsParams(product.productId, variant?.id ?? ""));
+                  },
+                  child:Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () {
+                          cartProvider.removeFromCart(item.productId, item.variant?.id);
+                        },
+                      ),
+                    ],
+                  )
                 ),
                 if (variant != null && variant.configuration.isNotEmpty)
-                  Padding(
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, ProductDetailsScreen.routeName, arguments: ProductDetailsParams(product.productId, variant?.id ?? ""));
+                  },
+                  child:Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(getSelectedConfigName(item.variant!),
                       style: const TextStyle(
                           fontSize: 12, color: Colors.grey),
                     ),
-                  ),
-                const SizedBox(height: 8),
+                  )
+                ),
                 Row(
                   children: [
-                    Text(
-                      "\$${variant?.price ?? product.price}",
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Text(
+                            "\$${variant?.price ?? product.price}",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () {
+                            _decrementItem(item, cartProvider, context);
+                          },
+                        ),
+                        Text(
+                          "${item.quantity}",
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: () {
+                            _incrementItem(item, cartProvider, context);
+                          },
+                        ),
+                      ],
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
-
-          // Quantity Controls
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
-                onPressed: () {
-                  _decrementItem(item, cartProvider, context);
-                },
-              ),
-              Text(
-                "${item.quantity}",
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                onPressed: () {
-                  _incrementItem(item, cartProvider, context);
-                },
-              ),
-            ],
-          )
         ],
       ),
     );

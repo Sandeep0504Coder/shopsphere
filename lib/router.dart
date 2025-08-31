@@ -4,6 +4,7 @@ import 'package:shopsphere/features/home/screens/home_screen.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
 import 'package:shopsphere/features/cart/screens/cart_screen.dart';
 import 'package:shopsphere/features/product_details/screens/product_details_screen.dart';
+import 'package:shopsphere/features/shipping/screens/shipping_address.dart';
 import 'package:shopsphere/common/widgets/bottom_bar.dart';
 import 'package:shopsphere/models/search_query.dart';
 import 'package:shopsphere/models/product.dart';
@@ -22,9 +23,10 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
         builder: (_) => const HomeScreen(),
       );
     case BottomBar.routeName:
+      int page = routeSettings.arguments as int? ?? 0;
       return MaterialPageRoute(
         settings: routeSettings,
-        builder: (_) => const BottomBar(),
+        builder: (_) => BottomBar( selectedPage: page ),
       );
     case CartScreen.routeName:
       return MaterialPageRoute(
@@ -58,14 +60,12 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
           variantId: productDetailsParams.variantId,
         ),
       );
-    // case AddressScreen.routeName:
-    //   var totalAmount = routeSettings.arguments as String;
-    //   return MaterialPageRoute(
-    //     settings: routeSettings,
-    //     builder: (_) => AddressScreen(
-    //       totalAmount: totalAmount,
-    //     ),
-    //   );
+    case ShippingPage.routeName:
+      return MaterialPageRoute(
+        settings: routeSettings,
+        builder: (_) => ShippingPage(
+        ),
+      );
     // case OrderDetailScreen.routeName:
     //   var order = routeSettings.arguments as Order;
     //   return MaterialPageRoute(

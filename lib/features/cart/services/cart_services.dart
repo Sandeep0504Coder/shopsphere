@@ -43,4 +43,31 @@ class CartServices {
 
     return systemSettings;
   }
+
+  Future<int> getDiscountByCoupon({
+    required String couponCode,
+    required BuildContext context,
+  }) async {
+    int discount = 0;
+
+    try {
+      final res = await http.get(Uri.parse('$uri/api/v1/payment/discount?coupon=$couponCode'));
+    print("Response: ${res.body}");
+      httpErrorHandle(
+        response: res,
+        context: context,
+        onSuccess: () {
+         final data = jsonDecode(res.body);
+print("data: ${data}");
+          if (data['success']) {
+            discount = data['discount'];
+          }
+        },
+      ); 
+    } catch (e) {
+      showSnackBar(context, e.toString());
+    }
+
+    return discount;
+  }
 }

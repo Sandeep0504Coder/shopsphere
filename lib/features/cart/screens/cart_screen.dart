@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopsphere/features/shipping/screens/shipping_address.dart';
 import 'package:shopsphere/models/system_settings.dart';
 import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/constants/global_variables.dart';
@@ -19,6 +20,7 @@ class _CartScreenState extends State<CartScreen> {
   SystemSettings? deliveryFeeData;
   SystemSettings? taxFeeData;
   final CartServices cartServices = CartServices();
+  final TextEditingController couponController = TextEditingController();
 
   @override
   void initState() {
@@ -48,6 +50,23 @@ class _CartScreenState extends State<CartScreen> {
     }
     isLoading = false;
     setState(() {});
+  }
+
+  applyCoupon() async {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    print("Applying coupon: ${couponController.text}");
+    final discount = await cartServices.getDiscountByCoupon(
+      couponCode: couponController.text,
+      context: context,
+    );
+
+    print("Discount received: $discount");
+    cartProvider.applyDiscount(discount);
+    if (discount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Coupon applied! Discount: \$${discount}")),
+      );
+    }
   }
 
 
@@ -112,13 +131,30 @@ class _CartScreenState extends State<CartScreen> {
                             Icon(Icons.local_offer_outlined,
                                 size: 18, color: GlobalVariables.selectedNavBarColor),
                             const SizedBox(width: 10),
-                            const Expanded(
-                              child: Text(
-                                "Enter Your Offer Code",
-                                style: TextStyle(color: Colors.grey),
+                            Expanded(
+                              child: SizedBox(
+                                height: 30,
+                                child: TextField(
+                                  controller: couponController,
+                                  decoration: InputDecoration(
+                                    
+                                    border: InputBorder.none,
+                                    hintText: "Enter Your Offer Code",
+                                    hintStyle: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios, size: 16),
+                            SizedBox(
+                              height: 30,
+                              child: IconButton(
+                                icon: Icon(Icons.arrow_forward_ios, size: 16),
+                                onPressed: () {
+                                  // Handle coupon code submission
+                                  applyCoupon();
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -168,7 +204,7 @@ class _CartScreenState extends State<CartScreen> {
                       const SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, "/shipping");
+                          Navigator.pushNamed(context, ShippingPage.routeName);
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),

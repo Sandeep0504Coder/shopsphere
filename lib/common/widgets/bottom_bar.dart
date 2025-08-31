@@ -9,7 +9,8 @@ import 'package:provider/provider.dart';
 
 class BottomBar extends StatefulWidget {
   static const String routeName = '/actual-home';
-  const BottomBar({Key? key}) : super(key: key);
+  final int? selectedPage;
+  const BottomBar({Key? key, this.selectedPage}) : super(key: key);
 
   @override
   State<BottomBar> createState() => _BottomBarState();
@@ -25,6 +26,15 @@ class _BottomBarState extends State<BottomBar> {
     const AccountScreen(),
     const CartScreen(),
   ];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (widget.selectedPage != null) {
+      _page = widget.selectedPage!;
+    }
+  }
 
   void updatePage(int page) {
     setState(() {

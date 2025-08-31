@@ -11,7 +11,7 @@ class CartProvider with ChangeNotifier {
   double _subtotal = 0;
   double _tax = 0;
   double _shippingCharges = 0;
-  double _discount = 0;
+  int _discount = 0;
   double _total = 0;
   double _taxRate = 5; // Default tax rate
   SystemSettings? _deliveryFee; // Default delivery percentage
@@ -22,7 +22,7 @@ class CartProvider with ChangeNotifier {
   double get subtotal => _subtotal;
   double get tax => _tax;
   double get shippingCharges => _shippingCharges;
-  double get discount => _discount;
+  int get discount => _discount;
   double get total => _total;
   double get taxRate => _taxRate;
   SystemSettings? get deliveryFee => _deliveryFee;
@@ -65,13 +65,13 @@ class CartProvider with ChangeNotifier {
           ? shippingChargeByPercent >= _deliveryFee?.entityDetails.amount ? shippingChargeByPercent : _deliveryFee?.entityDetails.amount
           : shippingChargeByPercent < _deliveryFee?.entityDetails.amount ? shippingChargeByPercent : _deliveryFee?.entityDetails.amount;
     }
-    
+
     _shippingCharges = shippingCharges.roundToDouble();
     _tax = (_subtotal * _taxRate / 100).roundToDouble();
     _total = _subtotal + _shippingCharges + _tax - _discount;
   }
 
-  void applyDiscount(double discount) {
+  void applyDiscount(int discount) {
     _discount = discount;
     _calculatePrices();
     notifyListeners();
