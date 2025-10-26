@@ -9,11 +9,17 @@ import './screens/home.dart';
 import 'package:provider/provider.dart';
 import 'package:shopsphere/providers/auth_state_handler.dart';
 import 'package:shopsphere/common/widgets/bottom_bar.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main()async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await dotenv.load(fileName: "assets/.env");
+
+  // Set publishable key from Stripe dashboard
+  Stripe.publishableKey = dotenv.env['FLUTTER_PUBLIC_KEY']!;
   // runApp(const MyApp());
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(

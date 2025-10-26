@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopsphere/common/services/address_services.dart';
+import 'package:shopsphere/common/services/payment_services.dart';
+import 'package:shopsphere/features/checkout/services/checkout_services.dart';
 import 'package:shopsphere/common/widgets/custom_textfield.dart';
 import 'package:shopsphere/models/address.dart';
+import 'package:shopsphere/models/new_order_request.dart';
 import 'package:shopsphere/models/region.dart';
 import 'package:shopsphere/models/shipping_info.dart';
 import 'package:shopsphere/models/user.dart';
 import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/providers/user_provider.dart';
 import 'package:shopsphere/constants/global_variables.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+
 
 class ShippingPage extends StatefulWidget {
   static const String routeName = "/shipping";
@@ -30,11 +35,13 @@ class _ShippingPageState extends State<ShippingPage> {
   
 
   final AddressServices addressServices = AddressServices();
+  final PaymentServices paymentServices = PaymentServices();
+  final CheckoutServices checkoutServices = CheckoutServices();
 
   String saveAs = "addAddress";
   String selectedCountryAbbr = "";
   String selectedStateAbbr = "";
-  Address? selectedShippingAddress;
+  Addresses? selectedShippingAddress;
 
   // var shippingInfo = {
   //   "name": "",
@@ -50,9 +57,9 @@ class _ShippingPageState extends State<ShippingPage> {
 
   List<States> stateOptions = [];
   List<Region> countries = []; // Populate from API
-  List<Address> addresses = []; // Populate from API
+  List<Addresses> addresses = []; // Populate from API
 
-  _handleSelectedAddressChange(Address? address, BuildContext context) {
+  _handleSelectedAddressChange(Addresses? address, BuildContext context) {
     if (address == null) return;
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     cartProvider.updateShippingAddressId(address.id);
@@ -133,21 +140,21 @@ class _ShippingPageState extends State<ShippingPage> {
     );
   }
 
-  void submit() {
+  void submit() async{
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
     final cart = Provider.of<CartProvider>(context, listen: false);
     cart.saveShippingInfo(
       ShippingInfo(
         name: nameController.text,
-        primaryPhone: primaryPhoneController.text,
-        secondaryPhone: secondaryPhoneController.text.isNotEmpty ? secondaryPhoneController.text : "",
+        primaryPhone: int.parse(primaryPhoneController.text),
+        secondaryPhone: secondaryPhoneController.text.isNotEmpty ? int.parse(secondaryPhoneController.text) : null,
         address: addressController.text,
         address2: address2Controller.text,
         city: cityController.text,
         state: selectedStateAbbr,
         country: selectedCountryAbbr,
-        pinCode: pinCodeController.text,
+        pinCode: int.parse(pinCodeController.text),
       )
     );
 
@@ -155,7 +162,7 @@ class _ShippingPageState extends State<ShippingPage> {
 
     // Handle add/update logic here based on `saveAs`
     if( saveAs == "updateAddress" ){
-      addressServices.updateAddress(
+      await addressServices.updateAddress(
       context: context,
         id: user!.id,
         addressId: selectedShippingAddress!.id,
@@ -173,7 +180,7 @@ class _ShippingPageState extends State<ShippingPage> {
         },
       );
     } else if( saveAs == "addAddress" ){
-      final addressId =  addressServices.createAddress(
+      final addressId =  await addressServices.createAddress(
         context: context,
         id: user!.id,
         addressData: {
@@ -204,11 +211,83 @@ class _ShippingPageState extends State<ShippingPage> {
     //         },
     //     } 
     // );
+    final clientSecret = await paymentServices.createPayment(context: context, total: cart.total);
 
-    // navigate( "/pay", {
-    //     state: data.clientSecret,
-    // } );
-    Navigator.pushNamed(context, "/pay");
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: "ShopSphere",
+        ),
+      );
+
+      try {
+        await Stripe.instance.presentPaymentSheet();
+
+        /// ✅ Payment Success
+        // Here you need to call your backend API to create the order
+        final orderData = NewOrderRequest(
+        shippingInfo: cart.shippingInfo,
+        orderItems: cart.cartItems,
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        discount: cart.discount,
+        shippingCharges: cart.shippingCharges,
+        total: cart.total,
+        user: user?.id ?? "",
+      );
+        print("ccart.shippingInfo ${cart.shippingInfo?.toJson()}");
+        // TODO: Send orderData to backend via Dio/HTTP
+        // final response = await api.createOrder(orderData);
+        final orderId = 
+        await checkoutServices.createOrder(context: context, orderData: orderData);
+
+        cart.resetCart(); // Clear cart
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                       Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 100.0,
+                      ),
+                      SizedBox(height: 10.0),
+                      Text("Payment Successful!"),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close the dialog
+                        Navigator.pushReplacementNamed(
+                          context,
+                          "/order-details",
+                          arguments: orderId as String
+                        ); // Navigate to order details
+                      },
+                      child: const Text("OK",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          // color: Colors.blue,
+                        )
+
+                      ),
+                    ),
+                  ],
+                ));
+        // Fluttertoast.showToast(msg: "Payment successful, order placed!");
+        // Navigator.pushReplacementNamed(
+        //   context,
+        //   "/orderConfirmation", // Navigate to your order details page
+        //   arguments: {"orderId": "ORDER_ID_FROM_BACKEND"},
+        // );
+      } catch (e) {
+        // Fluttertoast.showToast(msg: "Payment failed: $e");
+      }
   }
 
 
@@ -223,7 +302,7 @@ class _ShippingPageState extends State<ShippingPage> {
 
     final selectedAddress = addresses.firstWhere(
       (address) => cart.selectedShippingAddressId != "" ? address.id == cart.selectedShippingAddressId : address.isDefault,
-      orElse: () => Address(
+      orElse: () => Addresses(
         id: "",
         name: "",
         primaryPhone: 0,

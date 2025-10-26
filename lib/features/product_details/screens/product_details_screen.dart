@@ -35,8 +35,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Product? product;
   List<Review> reviews = [];
-  List<Address> addresses = [];
-  Address? selectedAddress;
+  List<Addresses> addresses = [];
+  Addresses? selectedAddress;
 
   Map<String, String> selectedConfig = {};
 
@@ -218,7 +218,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  _handleSelectedAddressChange(Address? address, BuildContext context) {
+  _handleSelectedAddressChange(Addresses? address, BuildContext context) {
     if (address == null) return;
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     cartProvider.updateShippingAddressId(address.id);

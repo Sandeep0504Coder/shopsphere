@@ -1,4 +1,4 @@
-class Address {
+class Addresses {
   final String id;
   final String name;
   final int primaryPhone;
@@ -12,7 +12,7 @@ class Address {
   final String user;
   final bool isDefault;
 
-  Address({
+  Addresses({
     required this.id,
     required this.name,
     required this.primaryPhone,
@@ -27,8 +27,8 @@ class Address {
     required this.isDefault,
   });
 
-  factory Address.fromJson(Map<String, dynamic> json) {
-    return Address(
+  factory Addresses.fromJson(Map<String, dynamic> json) {
+    return Addresses(
       id: json['_id'],
       name: json['name'],
       primaryPhone: json['primaryPhone'],

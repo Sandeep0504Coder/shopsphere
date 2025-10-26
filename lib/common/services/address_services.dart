@@ -9,8 +9,8 @@ import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/models/region.dart';
 
 class AddressServices {
-  Future<List<Address>> fetchAddresses({required String userId, required BuildContext context}) async {
-    List<Address> addresses = [];
+  Future<List<Addresses>> fetchAddresses({required String userId, required BuildContext context}) async {
+    List<Addresses> addresses = [];
 
     try {
       http.Response res = await http.get(Uri.parse('$uri/api/v1/user/address/my?id=$userId'));
@@ -24,7 +24,7 @@ class AddressServices {
           if (data['success']) {
             for (int i = 0; i < data['addresses'].length; i++) {
               addresses.add(
-                Address.fromJson(
+                Addresses.fromJson(
                   data['addresses'][i],
                 ),
               );
