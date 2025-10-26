@@ -44,6 +44,16 @@ class Order extends NewOrderRequest {
   }
 
   factory Order.fromMap(Map<String, dynamic> map) {
+    dynamic userField = map['user'];
+    Map<String, dynamic> userDetails;
+    if (userField is Map<String, dynamic>) {
+      userDetails = userField;
+    } else if (userField is String) {
+      userDetails = { "id": userField };
+    } else {
+      userDetails = {};
+    }
+
     return Order(
       id: map['_id'] ?? '',
       orderItems: List<CartItem>.from(
@@ -55,7 +65,7 @@ class Order extends NewOrderRequest {
       shippingCharges: map['shippingCharges']?.toDouble() ?? 0.0,
       discount: map['discount']?.toInt() ?? 0,
       total: map['total']?.toDouble() ?? 0.0,
-      userDetails: map['user'] ?? {},
+      userDetails: userDetails,
       status: map['status'] ?? '',
     );
   }

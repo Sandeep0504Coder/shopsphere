@@ -18,7 +18,7 @@ class TopButtons extends StatelessWidget {
           children: [
             AccountButton(
               text: 'Your Orders',
-              onTap: () {},
+              onTap: () => Navigator.pushNamed(context, '/orders'),
             ),
             AccountButton(
               text: 'Turn Seller',

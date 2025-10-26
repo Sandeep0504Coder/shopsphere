@@ -116,16 +116,34 @@ class _TrackingOrderScreenState extends State<TrackingOrderScreen> {
                             //     )),
                             const Spacer(),
                             Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(item.quantity.toString()),
-                                ],
-                              ),
-                            )
+  decoration: BoxDecoration(
+    color: Colors.grey.shade100,
+    borderRadius: BorderRadius.circular(12),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.grey.withOpacity(0.15),
+        blurRadius: 6,
+        offset: const Offset(0, 2),
+      ),
+    ],
+  ),
+  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.shopping_bag, size: 18, color: Colors.pink.shade400),
+      const SizedBox(width: 6),
+      Text(
+        item.quantity.toString(),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: Colors.black87,
+        ),
+      ),
+    ],
+  ),
+)
                           ],
                         )
                       ],
@@ -238,56 +256,8 @@ class _TrackingOrderScreenState extends State<TrackingOrderScreen> {
                           color: Colors.black)),
                   const SizedBox(height: 20),
 
-                  // Timeline
-                  Column(
-                    children: [
-                      _buildStatusItem(
-                        active: true,
-                        title: "On Delivery",
-                        subtitle: "Monday June 20th, 2020 12:25 AM",
-                        child: Row(
-                          children: [
-                            const CircleAvatar(
-                              radius: 20,
-                              backgroundImage: NetworkImage(
-                                  "https://randomuser.me/api/portraits/women/44.jpg"),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text("Thomas Djono",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14)),
-                                Text("ID 02123141",
-                                    style: TextStyle(
-                                        color: Colors.pink,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.phone, color: Colors.pink),
-                          ],
-                        ),
-                      ),
-                      _buildStatusItem(
-                        active: false,
-                        title: "North Gateway",
-                        subtitle: "Monday June 20th, 2020 12:25 AM",
-                        child: const Text(
-                          "Your order has been arrived at North Gateway, please wait next info",
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ),
-                      _buildStatusItem(
-                        active: false,
-                        title: "Order Created",
-                        subtitle: "Monday June 20th, 2020 12:25 AM",
-                      ),
-                    ],
-                  )
+                  // Dynamic Timeline based on order.status
+                  _buildStatusTimeline(order!.status),
                 ],
               ),
             )
@@ -346,6 +316,42 @@ class _TrackingOrderScreenState extends State<TrackingOrderScreen> {
           )
         ],
       ),
+    );
+  }
+
+  /// Replace static timeline with this dynamic builder
+  Widget _buildStatusTimeline(String status) {
+    // Only three statuses
+    final List<Map<String, dynamic>> statusSteps = [
+      {
+        "title": "Processing",
+        "subtitle": "Your order is being prepared.",
+      },
+      {
+        "title": "Shipped",
+        "subtitle": "Your order has been shipped.",
+      },
+      {
+        "title": "Delivered",
+        "subtitle": "Order delivered successfully.",
+      },
+    ];
+
+    int currentStep = statusSteps.indexWhere((step) => step["title"] == status);
+    if (currentStep == -1) currentStep = 0;
+
+    List<Map<String, dynamic>> visibleSteps = statusSteps.sublist(0, currentStep + 1);
+
+    return Column(
+      children: [
+        for (int i = 0; i < visibleSteps.length; i++)
+          _buildStatusItem(
+            active: i == currentStep,
+            title: visibleSteps[i]["title"],
+            subtitle: visibleSteps[i]["subtitle"],
+            // You can add a child widget for "Shipped" if needed
+          ),
+      ],
     );
   }
 }
