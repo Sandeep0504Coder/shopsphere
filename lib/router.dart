@@ -12,6 +12,7 @@ import 'package:shopsphere/common/widgets/bottom_bar.dart';
 import 'package:shopsphere/models/search_query.dart';
 import 'package:shopsphere/models/product.dart';
 import 'package:shopsphere/features/orders/screens/orders_screen.dart';
+import 'package:shopsphere/features/address/screens/addresses_screen.dart';
 
 Route<dynamic> generateRoute(RouteSettings routeSettings) {
   switch (routeSettings.name) {
@@ -84,6 +85,11 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
         settings: routeSettings,
         builder: (_) => const OrdersScreen(),
       );
+    case AddressesScreen.routeName:
+  return MaterialPageRoute(
+    settings: routeSettings,
+    builder: (_) => const AddressesScreen(),
+  );
     default:
       return MaterialPageRoute(
         settings: routeSettings,

@@ -124,4 +124,32 @@ class AddressServices {
 
     return addressId;
   }
+
+  Future<bool> deleteAddress({
+    required BuildContext context,
+    required String userId,
+    required String addressId,
+  }) async {
+    bool success = false;
+    try {
+      final http.Response response = await http.delete(
+        Uri.parse('$uri/api/v1/user/address/$addressId?id=$userId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      httpErrorHandle(
+        response: response,
+        context: context,
+        onSuccess: () {
+          success = true;
+          showSnackBar(context, "Address deleted successfully");
+        },
+      );
+    } catch (e) {
+      showSnackBar(context, e.toString());
+    }
+    return success;
+  }
 }

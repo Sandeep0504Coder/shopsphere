@@ -13,7 +13,6 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shopsphere/screens/home.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -94,7 +93,7 @@ class AuthService {
           showSnackBar(context, "Sign-in successful.");
           Navigator.pushNamedAndRemoveUntil(
             context,
-            Home.routeName,
+            BottomBar.routeName,
             (route) => false,
           );
         },
