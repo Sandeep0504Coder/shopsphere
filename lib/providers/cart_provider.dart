@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shopsphere/models/system_settings.dart';
+import 'package:shopsphere/features/cart/services/cart_local_storage_service.dart';
+import 'dart:async';
 import '../models/cart_item.dart';
 import '../models/shipping_info.dart';
-import '../models/product_variant.dart';
 
 class CartProvider with ChangeNotifier {
   List<CartItem> _cartItems = [];
@@ -15,6 +16,8 @@ class CartProvider with ChangeNotifier {
   double _total = 0;
   double _taxRate = 5; // Default tax rate
   SystemSettings? _deliveryFee; // Default delivery percentage
+
+  final CartLocalStorageService _storageService = CartLocalStorageService();
 
   List<CartItem> get cartItems => _cartItems;
   ShippingInfo? get shippingInfo => _shippingInfo;
@@ -41,6 +44,7 @@ class CartProvider with ChangeNotifier {
     }
 
     _calculatePrices();
+    unawaited(_storageService.saveCartItems(_cartItems));
     notifyListeners();
   }
 
@@ -50,6 +54,7 @@ class CartProvider with ChangeNotifier {
       (variantId == null || item.variant?.id == variantId));
 
     _calculatePrices();
+    unawaited(_storageService.saveCartItems(_cartItems));
     notifyListeners();
   }
 
@@ -96,6 +101,7 @@ class CartProvider with ChangeNotifier {
     _shippingCharges = 0;
     _discount = 0;
     _total = 0;
+    unawaited(_storageService.clearCart());
     notifyListeners();
   }
 
@@ -107,6 +113,13 @@ class CartProvider with ChangeNotifier {
 
   void setDeliveryFee(SystemSettings deliveryFee) {
     _deliveryFee = deliveryFee;
+    _calculatePrices();
+    notifyListeners();
+  }
+
+  /// Load cart items from storage
+  Future<void> loadCartFromStorage() async {
+    _cartItems = await _storageService.loadCartItems();
     _calculatePrices();
     notifyListeners();
   }

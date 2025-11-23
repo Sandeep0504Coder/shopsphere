@@ -6,6 +6,7 @@ import 'package:shopsphere/providers/cart_provider.dart';
 import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/cart/widgets/cart_item.dart';
 import 'package:shopsphere/features/cart/services/cart_services.dart';
+import 'package:shopsphere/providers/user_provider.dart';
 
 class CartScreen extends StatefulWidget {
   static const String routeName = "/cart";
@@ -74,6 +75,7 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final user = Provider.of<UserProvider>(context).user;
 
     return Scaffold(
       appBar: AppBar(
@@ -204,7 +206,19 @@ class _CartScreenState extends State<CartScreen> {
                       const SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, ShippingPage.routeName);
+                          if(user == null){
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Please login to proceed to checkout")),
+                            );
+                            return;
+                          } else if( cart.cartItems.isEmpty ) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Your cart is empty")),
+                            );
+                            return;
+                          } else {
+                            Navigator.pushNamed(context, ShippingPage.routeName);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),

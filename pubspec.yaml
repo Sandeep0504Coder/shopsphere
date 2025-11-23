@@ -33,6 +33,7 @@ dependencies:
   file_picker:
   http:
   shared_preferences:
+  flutter_secure_storage:
   provider:
   firebase_auth:
   firebase_core:

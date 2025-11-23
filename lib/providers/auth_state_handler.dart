@@ -63,8 +63,16 @@ class _AuthStateHandlerState extends State<AuthStateHandler> {
     // Return an empty container or transparent screen while initializing
     // The splash screen from flutter_native_splash will remain visible
     return Container(
-      color: Colors.black,
-      child: const SizedBox.expand(),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        image: DecorationImage(
+          image: AssetImage('assets/images/logo-transparent.png'),
+          fit: BoxFit.contain,
+        ),
+      ),
+      child: const Center(
+        child: SizedBox.shrink(),
+      ),
     );
   }
 }
