@@ -30,7 +30,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final ProductServices productServices = ProductServices();
   final AddressServices addressServices = AddressServices();
   int quantity = 1;
-  bool isInCart = false;
   bool isLoading = true;
 
   Product? product;
@@ -50,9 +49,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final user = Provider.of<UserProvider>(context, listen: false).user;
     final cart = Provider.of<CartProvider>(context, listen: false);
     final selectedShippingAddressId = cart.selectedShippingAddressId;
-    isInCart = cart.cartItems.indexWhere((e) =>
-      e.productId == widget.productId &&
-      (e.variant?.id == widget.variantId)) == -1 ? false : true;
     product = await productServices.fetchProductDetails(id: widget.productId, context: context);
     reviews = await productServices.fetchReviews(productId: widget.productId, context: context);
 
@@ -609,7 +605,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black),
                 ],
               ),
-              onTap: () => _openVariantSelector(),
+              onTap: () {
+                _openVariantSelector();
+              },
             );
           }),
         ],
@@ -626,6 +624,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     final selectedVariant = _getFilteredVariant();
+    
+    // Check if current variant is in cart
+    final isCurrentVariantInCart = cartProvider.cartItems.indexWhere((e) =>
+      e.productId == widget.productId &&
+      (e.variant?.id == selectedVariant?.id)) != -1;
 
     return Scaffold(
       appBar: AppBar(
@@ -657,7 +660,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               Expanded(
                 child: GestureDetector(
                   onTap: (){
-                    !isInCart ? _addToCart(
+                    !isCurrentVariantInCart ? _addToCart(
                       CartItem(
                         productId: product!.id,
                         photo: product!.photos.first.url,
@@ -674,7 +677,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: Container(
                     color: Colors.amber,
                     child: Center( heightFactor: 2, child: Text(
-                      isInCart ? "Go to Cart" : "Add to Cart",
+                      isCurrentVariantInCart ? "Go to Cart" : "Add to Cart",
                       style: TextStyle(
                         fontWeight: FontWeight.bold
                       )
