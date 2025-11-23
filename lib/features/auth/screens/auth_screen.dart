@@ -36,70 +36,164 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "ShopSphere",
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w500
-          ),
-        ),
-      ),
-      backgroundColor: GlobalVariables.greyBackgroundColor,
-      body: SafeArea(child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Text("Login", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 20),
-
-            Form(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                // Logo and Welcome Text
+                Center(
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        'assets/images/logo-transparent.png',
+                        height: 120,
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        "Welcome to ShopSphere",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: GlobalVariables.secondaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        "Let's get started with your shopping journey",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                
+                // Form Container with shadow
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 5,
+                        blurRadius: 15,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
               key: _signInFormKey,
               child: Column(
                 children: [
                   // Gender Selection
-                  CustomSelectField(controller: _genderController, options: ["Male", "Female"], hintText: "Select Your Gender"),
-                  SizedBox(height: 10),
+                  // Gender Selection with modern style
+                  CustomSelectField(
+                    controller: _genderController,
+                    options: ["Male", "Female"],
+                    hintText: "Select Your Gender",
+                  ),
+                  const SizedBox(height: 16),
 
-                  // Date of Birth Selection
+                  // Date of Birth Selection with modern style
                   CustomTextField(
-                    controller:_dobController,
-                    hintText:  "Date of Birth",
+                    controller: _dobController,
+                    hintText: "Date of Birth",
                     onTapFunc: () async {
                       DateTime? pickedDate = await showDatePicker(
                         context: context,
                         initialDate: DateTime.now(),
                         firstDate: DateTime(1900),
                         lastDate: DateTime.now(),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.light(
+                                primary: GlobalVariables.secondaryColor,
+                                onPrimary: Colors.white,
+                                surface: Colors.white,
+                                onSurface: Colors.black,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (pickedDate != null) {
                         _dobController.text = pickedDate.toIso8601String().split("T")[0];
                       }
                     },
                   ),
-                  SizedBox(height: 20),
-                  Text("Already Signed In Once?"),
-                  SizedBox(height: 20),
-                  // Google Sign-in Button
-                  ElevatedButton.icon(
-                    icon: Image.asset("assets/images/google_logo.png", height: 24), // Add Google logo in assets
-                    label: Text("Sign in with Google"),
-                    onPressed: (){
-                      if (_signInFormKey.currentState!.validate()) {
-                        signInUser();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                      textStyle: TextStyle(fontSize: 16),
+                  const SizedBox(height: 32),
+
+                  // Modern Google Sign-in Button
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: Image.asset(
+                          "assets/images/google_logo.png",
+                          height: 24,
+                        ),
+                      ),
+                      label: const Text(
+                        "Continue with Google",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      onPressed: () {
+                        if (_signInFormKey.currentState!.validate()) {
+                          signInUser();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side: BorderSide(
+                            color: Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                        elevation: 0,
+                      ),
                     ),
-                  ),                  
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Terms and Privacy text
+                  Text(
+                    'By continuing, you agree to our Terms of Service and Privacy Policy',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      ))
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    ),
+  ),
+),
     );
   }
 }

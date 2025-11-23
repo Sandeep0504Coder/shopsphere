@@ -44,10 +44,65 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildNotLoggedInView(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            ),
+            child: Icon(
+              Icons.account_circle_outlined,
+              size: 100,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Welcome to ShopSphere',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Sign in to view your profile, orders,\nand manage your shopping experience',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () => Navigator.pushNamed(context, '/auth-screen'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: const Text(
+              'Sign In',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserProvider>(context).user;
-    
 
     return Scaffold(
       appBar: PreferredSize(
@@ -83,11 +138,13 @@ class AccountScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const BelowAppBar(),
-            const SizedBox(height: 12),
+      body: user == null
+          ? _buildNotLoggedInView(context)
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  const BelowAppBar(),
+                  const SizedBox(height: 12),
             // Profile header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -99,8 +156,8 @@ class AccountScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 36,
-                        backgroundImage: user != null && user.photo != ""
-                          ? NetworkImage(user!.photo)
+                        backgroundImage: user.photo != ""
+                          ? NetworkImage(user.photo)
                           : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
                       ),
                       const SizedBox(width: 12),
@@ -108,9 +165,9 @@ class AccountScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text( user?.name ?? '', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text(user?.email ?? '', style: TextStyle(color: Colors.grey)),
+                            Text(user.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text(user.email, style: const TextStyle(color: Colors.grey)),
                           ],
                         ),
                       ),
@@ -182,20 +239,13 @@ class AccountScreen extends StatelessWidget {
                     Divider(height: 1, color: Colors.grey[200],),
                     _buildTile(Icons.help_outline, 'Help & Support'),
                     Divider(height: 1, color: Colors.grey[200],),
-                    user != null ? ListTile(
+                    ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Colors.redAccent,
                         child: Icon(Icons.logout, color: Colors.white),
                       ),
                       title: const Text('Sign out', style: TextStyle(color: Colors.redAccent)),
                       onTap: () => AccountServices().logOut(context),
-                    ) : ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Colors.greenAccent,
-                        child: Icon(Icons.login, color: Colors.white),
-                      ),
-                      title: const Text('Sign In', style: TextStyle(color: Colors.greenAccent)),
-                      onTap: () => Navigator.pushNamed(context, '/auth-screen'),
                     ),
                   ],
                 ),

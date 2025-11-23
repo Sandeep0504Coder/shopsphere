@@ -68,12 +68,17 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/logo-transparent.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/logo-transparent.png"
 flutter_native_splash:
   color: "#000000"
   image: assets/images/logo-transparent.png
   android: true
   ios: true
   web: false
+  android_12:
+    color: "#000000"           # BLACK background for Android 12+
+    image: assets/images/logo192.png
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -92,7 +97,8 @@ flutter:
     - assets/images/logo.jpg
     - assets/images/logo2.jpg
     - assets/images/logo-transparent.png
-    - assets/.env
+    - assets/images/logo192.png
+    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

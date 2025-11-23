@@ -16,41 +16,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(); 
   // sign in user
   Future signInUser({
     required BuildContext context,
     required String gender,
     required String dob,
   }) async {
-    // try {
-    //   http.Response res = await http.post(
-    //     Uri.parse('$uri/api/signin'),
-    //     body: jsonEncode({
-    //       'email': email,
-    //       'password': password,
-    //     }),
-    //     headers: <String, String>{
-    //       'Content-Type': 'application/json; charset=UTF-8',
-    //     },
-    //   );
-      //   httpErrorHandle(
-      //   response: res,
-      //   context: context,
-      //   onSuccess: () async {
-      //     SharedPreferences prefs = await SharedPreferences.getInstance();
-      //     Provider.of<UserProvider>(context, listen: false).setUser(res.body);
-      //     await prefs.setString('x-auth-token', jsonDecode(res.body)['token']);
-      //     Navigator.pushNamedAndRemoveUntil(
-      //       context,
-      //       BottomBar.routeName,
-      //       (route) => false,
-      //     );
-      //   },
-      // );
-    // } catch (e) {
-    //   showSnackBar(context, e.toString());
-    // }
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn .signIn();
 

@@ -111,6 +111,48 @@ class _AddressBoxState extends State<AddressBox> {
   Widget build(BuildContext context) {
     final user = Provider.of<UserProvider>(context).user;
 
+    // If user is not logged in, show login message
+    if (user == null) {
+      return Container(
+        height: 40,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromARGB(255, 114, 226, 221),
+              Color.fromARGB(255, 162, 236, 233),
+            ],
+            stops: [0.5, 1.0],
+          ),
+        ),
+        padding: const EdgeInsets.only(left: 10),
+        child: GestureDetector(
+          onTap: () {
+            // Navigate to login screen
+            Navigator.pushNamed(context, '/auth-screen');
+          },
+          child: Row(
+            children: [
+              Icon(
+                Icons.login_outlined,
+                size: 20,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 5),
+                  child: Text(
+                    'Sign in to see saved addresses',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
+      );
+    }
+
     String addressText;
     if (isLoading) {
       addressText = 'Loading address...';
@@ -118,7 +160,7 @@ class _AddressBoxState extends State<AddressBox> {
       addressText =
           '${selectedAddress!.name}, ${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}, ${selectedAddress!.pinCode}';
     } else {
-      addressText = 'Delivery to ${user?.name}';
+      addressText = 'Delivery to ${user.name}';
     }
 
     return Container(

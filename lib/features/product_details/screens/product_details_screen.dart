@@ -48,7 +48,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   void _fetchProductDetails() async {
     final user = Provider.of<UserProvider>(context, listen: false).user;
-    final selectedShippingAddressId = Provider.of<CartProvider>(context, listen: false).selectedShippingAddressId;
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final selectedShippingAddressId = cart.selectedShippingAddressId;
+    isInCart = cart.cartItems.indexWhere((e) =>
+      e.productId == widget.productId &&
+      (e.variant?.id == widget.variantId)) == -1 ? false : true;
     product = await productServices.fetchProductDetails(id: widget.productId, context: context);
     reviews = await productServices.fetchReviews(productId: widget.productId, context: context);
 
@@ -175,10 +179,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     try {
       final user = Provider.of<UserProvider>(context, listen: false).user;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please sign in to submit a review.")),
+        );
+        return;
+      }
+
       await productServices.addEditReview(
         context: context,
         productId: product!.id,
-        userId: user!.id,
+        userId: user.id,
         comment: reviewController.text.trim(),
         rating: reviewRating.toInt(),
       );
@@ -200,10 +211,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   void _deleteReview(String reviewId) async {
     try {
       final user = Provider.of<UserProvider>(context, listen: false).user;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please sign in to delete the review.")),
+        );
+        return;
+      }
+
       await productServices.deleteReview(
         context: context,
         reviewId: reviewId,
-        userId: user!.id,
+        userId: user.id,
       );
 
       setState(() {
@@ -346,13 +364,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _showReviewModal() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (context) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please sign in to review this product'),
+          action: SnackBarAction(
+            label: 'Sign In',
+            onPressed: () {
+              Navigator.pushNamed(context, '/auth-screen');
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
       return Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -623,7 +657,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               Expanded(
                 child: GestureDetector(
                   onTap: (){
-                    _addToCart(
+                    !isInCart ? _addToCart(
                       CartItem(
                         productId: product!.id,
                         photo: product!.photos.first.url,
@@ -635,12 +669,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                       context,
                       cartProvider
-                    );
+                    ) : Navigator.pushNamed(context, '/actual-home', arguments: 2);
                   },
                   child: Container(
                     color: Colors.amber,
                     child: Center( heightFactor: 2, child: Text(
-                      isInCart ? "Update Cart" : "Add to Cart",
+                      isInCart ? "Go to Cart" : "Add to Cart",
                       style: TextStyle(
                         fontWeight: FontWeight.bold
                       )
@@ -825,7 +859,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   Text(r.comment),
                 ],
               ),
-              trailing: user!.id == r.user.id ? IconButton(
+              trailing: user?.id == r.user.id ? IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () {
                   _deleteReview(r.id);
