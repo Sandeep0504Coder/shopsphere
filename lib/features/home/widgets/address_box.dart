@@ -114,42 +114,70 @@ class _AddressBoxState extends State<AddressBox> {
     // If user is not logged in, show login message
     if (user == null) {
       return Container(
-        height: 40,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
             colors: [
               Color.fromARGB(255, 114, 226, 221),
               Color.fromARGB(255, 162, 236, 233),
             ],
             stops: [0.5, 1.0],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.only(left: 10),
-        child: GestureDetector(
-          onTap: () {
-            // Navigate to login screen
-            Navigator.pushNamed(context, '/auth-screen');
-          },
-          child: Row(
-            children: [
-              Icon(
-                Icons.login_outlined,
-                size: 20,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 5),
-                  child: Text(
-                    'Sign in to see saved addresses',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.pushNamed(context, '/auth-screen');
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.login_outlined,
+                      size: 20,
+                      color: Colors.white,
                     ),
                   ),
-                ),
+                  const Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 12),
+                      child: Text(
+                        'Sign in to see your saved addresses',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        )
+        ),
       );
     }
 
@@ -158,55 +186,97 @@ class _AddressBoxState extends State<AddressBox> {
       addressText = 'Loading address...';
     } else if (selectedAddress != null) {
       addressText =
-          '${selectedAddress!.name}, ${selectedAddress!.address}, ${selectedAddress!.city}, ${selectedAddress!.state}, ${selectedAddress!.pinCode}';
+          '${selectedAddress!.name}, ${selectedAddress!.address}, ${selectedAddress!.city}';
     } else {
-      addressText = 'Delivery to ${user.name}';
+      addressText = 'Deliver to ${user.name}';
     }
 
     return Container(
-      height: 40,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
           colors: [
             Color.fromARGB(255, 114, 226, 221),
             Color.fromARGB(255, 162, 236, 233),
           ],
           stops: [0.5, 1.0],
         ),
-      ),
-      padding: const EdgeInsets.only(left: 10),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.location_on_outlined,
-            size: 20,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 5),
-              child: Text(
-                addressText,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 5,
-              top: 2,
-            ),
-            child: IconButton(
-              onPressed: _openAddressSelector,
-              icon: const Icon(
-              Icons.arrow_drop_down_outlined,
-              size: 18,
-            ),
-            )
-          )
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _openAddressSelector,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.location_on_outlined,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Deliver to',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          addressText,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

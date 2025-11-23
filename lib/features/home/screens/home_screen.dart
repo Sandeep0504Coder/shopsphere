@@ -1,11 +1,8 @@
 import 'package:shopsphere/constants/global_variables.dart';
 import 'package:shopsphere/features/home/widgets/address_box.dart';
-import 'package:shopsphere/features/home/widgets/carousel_image.dart';
-import 'package:shopsphere/features/home/widgets/deal_of_day.dart';
 import 'package:shopsphere/features/home/widgets/hero_section.dart';
 import 'package:shopsphere/features/home/widgets/top_categories.dart';
 import 'package:shopsphere/features/search/screens/search_screen.dart';
-import 'package:shopsphere/features/home/services/home_services.dart';
 import 'package:flutter/material.dart';
 import 'package:shopsphere/models/search_query.dart';
 class HomeScreen extends StatefulWidget {
@@ -24,73 +21,95 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
+        preferredSize: const Size.fromHeight(70),
         child: AppBar(
+          elevation: 0,
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: GlobalVariables.appBarGradient,
             ),
           ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          title: Column(
             children: [
-              Expanded(
-                child: Container(
-                  height: 42,
-                  margin: const EdgeInsets.only(left: 15),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(7),
-                    elevation: 1,
-                    child: TextFormField(
-                      onFieldSubmitted: navigateToSearchScreen,
-                      decoration: InputDecoration(
-                        prefixIcon: InkWell(
-                          onTap: () {},
-                          child: const Padding(
-                            padding: EdgeInsets.only(
-                              left: 6,
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      margin: const EdgeInsets.only(left: 12, right: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        borderRadius: BorderRadius.circular(12),
+                        child: TextFormField(
+                          onFieldSubmitted: navigateToSearchScreen,
+                          decoration: InputDecoration(
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.only(left: 12),
+                              child: Icon(
+                                Icons.search,
+                                color: Colors.grey,
+                                size: 22,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.search,
-                              color: Colors.black,
-                              size: 23,
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.grey.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            hintText: 'Search...',
+                            hintStyle: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 15,
+                              color: Colors.grey[600],
                             ),
                           ),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.only(top: 10),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(7),
-                          ),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(7),
-                          ),
-                          borderSide: BorderSide(
-                            color: Colors.black38,
-                            width: 1,
-                          ),
-                        ),
-                        hintText: 'Search products...',
-                        hintStyle: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 17,
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              Container(
-                color: Colors.transparent,
-                height: 42,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                child: const Icon(Icons.mic, color: Colors.black, size: 25),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Material(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () {},
+                        borderRadius: BorderRadius.circular(12),
+                        child: const SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Icon(
+                            Icons.mic,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -100,11 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             AddressBox(),
-            SizedBox(height: 10),
+            const SizedBox(height: 8),
             TopCategories(),
-            SizedBox(height: 10),
+            const SizedBox(height: 16),
             HeroSection(),
-            // DealOfDay(),
           ],
         ),
       ),
