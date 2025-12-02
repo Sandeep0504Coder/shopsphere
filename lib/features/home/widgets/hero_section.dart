@@ -38,6 +38,31 @@ class _HeroSectionState extends State<HeroSection> {
   }
 
   void _addToCart(CartItem cartItem, BuildContext context, CartProvider cartProvider) {
+    final isCurrentVariantInCart = cartProvider.cartItems.indexWhere((e) =>
+      e.productId == cartItem.productId &&
+      (e.variant?.id == cartItem.variant?.id)) != -1;
+
+    if(isCurrentVariantInCart) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text("Item already in cart."),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/actual-home', arguments: 2);
+              },
+              child: Text("Go to Cart", style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.cyan)),
+            )
+          ]
+        )),
+      );
+      return;
+    }
+
     if( cartItem.stock < 1 ) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Out of Stock.")),
