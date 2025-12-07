@@ -11,75 +11,63 @@ class SearchedProduct extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: 10,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              product.photos[0].url,
+              fit: BoxFit.cover,
+              height: 120,
+              width: 120,
+            ),
           ),
-          child: Row(
-            children: [
-              Image.network(
-                product.photos[0].url,
-                fit: BoxFit.contain,
-                height: 135,
-                width: 135,
-              ),
-              Column(
-                children: [
-                  Container(
-                    width: 235,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
-                      maxLines: 2,
-                    ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Stars(rating: product.ratings ?? 0),
+                const SizedBox(height: 6),
+                Text(
+                  '\$${product.price}',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color.fromARGB(255, 114, 226, 221)),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.green[300]!, width: 0.5),
                   ),
-                  Container(
-                    width: 235,
-                    padding: const EdgeInsets.only(left: 10, top: 5),
-                    child: Stars(
-                      rating: product.ratings ?? 0,
-                    ),
+                  child: const Text(
+                    'In Stock',
+                    style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
-                  Container(
-                    width: 235,
-                    padding: const EdgeInsets.only(left: 10, top: 5),
-                    child: Text(
-                      '\$${product.price}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                    ),
-                  ),
-                  Container(
-                    width: 235,
-                    padding: const EdgeInsets.only(left: 10),
-                    child: const Text('Eligible for FREE Shipping'),
-                  ),
-                  Container(
-                    width: 235,
-                    padding: const EdgeInsets.only(left: 10, top: 5),
-                    child: const Text(
-                      'In Stock',
-                      style: TextStyle(
-                        color: Colors.teal,
-                      ),
-                      maxLines: 2,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

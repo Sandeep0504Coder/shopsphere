@@ -139,6 +139,31 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _addToCart(CartItem cartItem, BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    final isCurrentVariantInCart = cartProvider.cartItems.indexWhere((e) =>
+      e.productId == cartItem.productId &&
+      (e.variant?.id == cartItem.variant?.id)) != -1;
+
+    if(isCurrentVariantInCart) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text("Item already in cart."),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/actual-home', arguments: 2);
+              },
+              child: Text("Go to Cart", style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.cyan)),
+            )
+          ]
+        )),
+      );
+      return;
+    }
+    
     if( cartItem.stock < 1 ) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Out of Stock.")),
@@ -157,49 +182,127 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildProductCard(Product product) {
+    final price = product.variants.isNotEmpty ? product.variants[0].price : product.price;
+    final stock = product.variants.isNotEmpty ? product.variants[0].stock : product.stock;
     return GestureDetector(
       onTap: () {
         navigateToProductDetailsScreen(product.id);
       },
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: Image.network(product.photos[0].url, fit: BoxFit.cover),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text("\$${product.variants.isNotEmpty ? product.variants[0].price : product.price}", style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: ElevatedButton(
-                onPressed: () => _addToCart(
-                  CartItem(
-                    productId: product.id,
-                    photo: product.photos[0].url,
-                    name: product.name,
-                    price: product.variants.isNotEmpty ? product.variants[0].price : product.price,
-                    quantity: 1,
-                    stock: product.variants.isNotEmpty ? product.variants[0].stock : product.stock,
-                    variant: product.variants.isNotEmpty ? product.variants[0] : null, // Handle variants if needed
-                  ),
-                  context
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Stack(
+                  children: [
+                    Image.network(product.photos[0].url, fit: BoxFit.cover, width: double.infinity),
+                    if (stock < 1)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black.withOpacity(0.3),
+                          child: const Center(
+                            child: Text('Out of Stock', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                child: Text("Add to Cart"),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("\$$price", style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color.fromARGB(255, 114, 226, 221))),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 32,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(255, 114, 226, 221),
+                              foregroundColor: Colors.white,
+                              elevation: 1,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: stock < 1 ? null : () => _addToCart(
+                              CartItem(
+                                productId: product.id,
+                                photo: product.photos[0].url,
+                                name: product.name,
+                                price: price,
+                                quantity: 1,
+                                stock: stock,
+                                variant: product.variants.isNotEmpty ? product.variants[0] : null,
+                              ),
+                              context
+                            ),
+                            child: const Text("Add to Cart", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      )
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({required String label, required bool isSelected, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color.fromARGB(255, 114, 226, 221) : Colors.white,
+          border: Border.all(
+            color: isSelected ? const Color.fromARGB(255, 114, 226, 221) : Colors.grey[300]!,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected ? [BoxShadow(color: const Color.fromARGB(255, 114, 226, 221).withOpacity(0.2), blurRadius: 4)] : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? Icons.check : Icons.tune,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey[700],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[800],
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -216,63 +319,99 @@ class _SearchScreenState extends State<SearchScreen> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
                       const Spacer(),
-                      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                       const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.close, color: Colors.grey[700], size: 20),
+                          onPressed: () => Navigator.pop(context),
+                          constraints: const BoxConstraints(minHeight: 36, minWidth: 36),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   Wrap(
-                    spacing: 8,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: options.entries.map((entry) {
                       final isSelected = tempSelectedKey == entry.key;
-                      return ChoiceChip(
+                      return FilterChip(
                         label: Text(entry.value),
                         selected: isSelected,
                         onSelected: (_) => setState(() => tempSelectedKey = entry.key),
+                        backgroundColor: Colors.white,
+                        selectedColor: const Color.fromARGB(255, 114, 226, 221),
+                        side: BorderSide(
+                          color: isSelected ? const Color.fromARGB(255, 114, 226, 221) : Colors.grey[300]!,
+                          width: 1,
+                        ),
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[800],
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isSelected ? const Color.fromARGB(255, 114, 226, 221) : Colors.grey[300]!,
+                            width: 1,
+                          ),
+                        ),
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey[300]!, width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
                           onPressed: () {
                             setState(() => tempSelectedKey = "");
                           },
-                          child: const Text("Clear"),
+                          child: Text("Clear", style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600)),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(255, 114, 226, 221),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 2,
+                          ),
                           onPressed: () {
                             Navigator.pop(context);
                             onApply(tempSelectedKey);
                           },
-                          child: const Text("Apply"),
+                          child: const Text("Apply", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
                 ],
               ),
             );
@@ -292,11 +431,10 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
-        surfaceTintColor: GlobalVariables.selectedNavBarColor,
-        // backgroundColor: Colors.white,
-        elevation: 1,
+        elevation: 0,
+        backgroundColor: Colors.white,
         title: SizedBox(
-          height: 40,
+          height: 48,
           child: TextField(
             controller: TextEditingController(text: search),
             onSubmitted: (val) {
@@ -304,15 +442,24 @@ class _SearchScreenState extends State<SearchScreen> {
               fetchProducts();
             },
             decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               hintText: "Search products...",
-              suffixIcon: Icon(Icons.search),
+              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+              suffixIcon: Icon(Icons.search, color: Colors.grey[600]),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color.fromARGB(255, 114, 226, 221), width: 2),
               ),
               filled: true,
-              fillColor: Colors.grey[100],
+              fillColor: Colors.grey[50],
             ),
           ),
         ),
@@ -322,15 +469,15 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           // Filter Chips (Brand, Price, RAM, etc.)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  ChoiceChip(
-                    label: Text("Category"),
-                    selected: selectedCategory != "",
-                    onSelected: (_) {
+                  _buildFilterChip(
+                    label: "Category",
+                    isSelected: selectedCategory != "",
+                    onTap: () {
                       showMappedFilterBottomSheet(
                         context: context,
                         title: "Select Category",
@@ -346,11 +493,11 @@ class _SearchScreenState extends State<SearchScreen> {
                       );
                     },
                   ),
-                  SizedBox(width: 16),
-                  ChoiceChip(
-                    label: Text("Sort"),
-                    selected: selectedSort != "",
-                    onSelected: (_) {
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: "Sort",
+                    isSelected: selectedSort != "",
+                    onTap: () {
                       showMappedFilterBottomSheet(
                         context: context,
                         title: "Sort by",
@@ -366,11 +513,11 @@ class _SearchScreenState extends State<SearchScreen> {
                       );
                     },
                   ),
-                  SizedBox(width: 16),
-                  ChoiceChip(
-                    label: Text("Price"),
-                    selected: selectedPrice != '',
-                    onSelected: (_) {
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: "Price",
+                    isSelected: selectedPrice != '',
+                    onTap: () {
                       showMappedFilterBottomSheet(
                         context: context,
                         title: "Price Range",
@@ -391,16 +538,23 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           // Product List or Grid
+          if (!isLoadingMore && products.isEmpty)
+            const Expanded(
+              child: Center(
+                child: Text("No products found."),
+              ),
+            )
+          else
           Expanded(
             child: GridView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(8,8,8,48),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 48),
               itemCount: products.length + (isLoadingMore ? 1 : 0),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.55,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
+                childAspectRatio: 0.52,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
               ),
               itemBuilder: (context, index) {
                 if (index < products.length) {
